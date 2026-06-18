@@ -1,31 +1,12 @@
 /* ============================================
-   🎉 PartyHub — Global Design System
-   ============================================
-   
-   🧠 LEARN: CSS Custom Properties (Variables)
-   
-   Instead of writing colors everywhere like:
-     background: #6c63ff;    (repeated 50 times)
-   
-   We define them ONCE here:
-     --primary: #6c63ff;
-   
-   And use them everywhere:
-     background: var(--primary);
-   
-   Benefits:
-   1. Change a color in ONE place → updates everywhere
-   2. Easy dark/light mode switching
-   3. Consistent design across the entire app
+   🌙 AfterDark — Global Design System
    ============================================ */
 
-/* Google Font — Inter is clean, modern, and highly readable */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+/* Google Fonts — Inter for body, Instrument Serif for display */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap");
 
 /* ============================================
-   CSS RESET — Normalize browser defaults
-   🧠 Every browser adds its own default margins, paddings, etc.
-   This resets everything to a clean slate
+   CSS RESET
    ============================================ */
 *,
 *::before,
@@ -36,28 +17,30 @@
 }
 
 :root {
-  /* ── Primary Colors ── */
+  /* ── Core Palette (HSL values) ── */
+  --bg: 240 33% 5%;
+  --surface: 240 20% 8%;
+  --text: 0 0% 96%;
+  --muted: 240 10% 53%;
+  --stroke: 240 15% 14%;
+  --accent: 0 0% 96%;
+
+  /* ── Wrapped HSL Colors ── */
+  --color-bg: hsl(var(--bg));
+  --color-surface: hsl(var(--surface));
+  --color-text: hsl(var(--text));
+  --color-muted: hsl(var(--muted));
+  --color-stroke: hsl(var(--stroke));
+
+  /* ── Party Accent Colors ── */
   --primary: #7c5cfc;
   --primary-light: #9f8aff;
   --primary-dark: #5a3de6;
   --primary-glow: rgba(124, 92, 252, 0.3);
 
-  /* ── Accent Colors ── */
-  --accent: #ff6b9d;
-  --accent-light: #ff8fb8;
-  --accent-dark: #e64d7a;
-
-  /* ── Background (Dark Theme) ── */
-  --bg-primary: #0a0a1a;
-  --bg-secondary: #111128;
-  --bg-card: #16163a;
-  --bg-card-hover: #1e1e4a;
-  --bg-elevated: #1a1a3e;
-
-  /* ── Text Colors ── */
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0c0;
-  --text-muted: #6b6b8a;
+  --accent-pink: #ff6b9d;
+  --accent-pink-light: #ff8fb8;
+  --accent-pink-dark: #e64d7a;
 
   /* ── Status Colors ── */
   --success: #00d68f;
@@ -76,9 +59,19 @@
   --glass-strong: rgba(255, 255, 255, 0.1);
 
   /* ── Gradients ── */
-  --gradient-primary: linear-gradient(135deg, #7c5cfc, #ff6b9d);
-  --gradient-card: linear-gradient(145deg, #16163a, #1a1a3e);
-  --gradient-hero: linear-gradient(180deg, #0a0a1a 0%, #111128 50%, #0a0a1a 100%);
+  --gradient-primary: linear-gradient(90deg, #7c5cfc 0%, #ff6b9d 100%);
+  --gradient-card: linear-gradient(145deg, hsl(var(--surface)), hsl(240 20% 10%));
+  --gradient-hero: linear-gradient(180deg, hsl(var(--bg)) 0%, hsl(var(--surface)) 50%, hsl(var(--bg)) 100%);
+
+  /* ── Legacy aliases for EventCard compatibility ── */
+  --bg-primary: hsl(var(--bg));
+  --bg-secondary: hsl(var(--surface));
+  --bg-card: hsl(var(--surface));
+  --bg-card-hover: hsl(240 20% 11%);
+  --bg-elevated: hsl(240 20% 10%);
+  --text-primary: hsl(var(--text));
+  --text-secondary: hsl(var(--muted));
+  --text-muted: hsl(240 10% 40%);
 
   /* ── Shadows ── */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -99,7 +92,9 @@
   --transition-slow: 400ms ease;
 
   /* ── Typography ── */
-  --font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-family: var(--font-body);
 }
 
 html {
@@ -108,9 +103,9 @@ html {
 }
 
 body {
-  font-family: var(--font-family);
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  font-family: var(--font-body);
+  background: hsl(var(--bg));
+  color: hsl(var(--text));
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -136,26 +131,26 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
-  font-family: var(--font-family);
+  font-family: var(--font-body);
 }
 
 input,
 textarea,
 select {
-  font-family: var(--font-family);
+  font-family: var(--font-body);
   outline: none;
   border: none;
 }
 
 /* ============================================
-   SCROLLBAR — Custom styled scrollbar
+   SCROLLBAR
    ============================================ */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: hsl(var(--bg));
 }
 
 ::-webkit-scrollbar-thumb {
@@ -168,7 +163,7 @@ select {
 }
 
 /* ============================================
-   UTILITY CLASSES — Reusable helpers
+   UTILITY CLASSES
    ============================================ */
 .container {
   width: 100%;
@@ -192,6 +187,17 @@ select {
   background-clip: text;
 }
 
+/* ── Accent Gradient Utility ── */
+.accent-gradient {
+  background: var(--gradient-primary);
+}
+
+/* ── Font Display ── */
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* ── Buttons ── */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -220,11 +226,11 @@ select {
   gap: 8px;
   padding: 12px 28px;
   background: var(--glass-strong);
-  color: var(--text-primary);
+  color: hsl(var(--text));
   font-weight: 600;
   font-size: 0.95rem;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-light);
+  border: 1px solid hsl(var(--stroke));
   transition: all var(--transition-base);
   cursor: pointer;
 }
@@ -236,7 +242,7 @@ select {
 }
 
 /* ============================================
-   ANIMATIONS
+   CUSTOM ANIMATIONS
    ============================================ */
 @keyframes fadeInUp {
   from {
@@ -268,17 +274,81 @@ select {
   }
 }
 
+@keyframes scroll-down {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(200%);
+    opacity: 0;
+  }
+}
+
+@keyframes role-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.5);
+  }
+}
+
 .animate-fade-in {
   animation: fadeInUp 0.5s ease forwards;
+}
+
+.animate-scroll-down {
+  animation: scroll-down 1.5s ease-in-out infinite;
+}
+
+.animate-role-fade-in {
+  animation: role-fade-in 0.4s ease-out;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
 }
 
 /* Loading skeleton shimmer effect */
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--bg-card) 25%,
-    var(--bg-card-hover) 50%,
-    var(--bg-card) 75%
+    hsl(var(--surface)) 25%,
+    hsl(240 20% 11%) 50%,
+    hsl(var(--surface)) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

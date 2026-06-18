@@ -9,6 +9,11 @@ import morgan from "morgan";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 
+// Route imports
+import eventRoutes from "./routes/eventRoutes.js";
+import venueRoutes from "./routes/venueRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+
 // Load environment variables from .env file FIRST
 dotenv.config();
 
@@ -71,14 +76,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// TODO: Day 3-4 — Auth routes
-// app.use("/api/auth", authRoutes);
+// ✅ Auth routes (Day 4)
+app.use("/api/auth", authRoutes);
 
-// TODO: Day 6 — Event routes
-// app.use("/api/events", eventRoutes);
+// ✅ Event routes (Day 2)
+app.use("/api/events", eventRoutes);
 
-// TODO: Day 9 — Venue routes
-// app.use("/api/venues", venueRoutes);
+// ✅ Venue routes (Day 2)
+app.use("/api/venues", venueRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);
