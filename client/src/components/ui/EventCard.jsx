@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   HiMapPin,
@@ -90,6 +91,7 @@ function EventCard({ event }) {
   };
 
   return (
+    <Link to={`/events/${event.id}`} className="event-card__link">
     <motion.div
       className="event-card"
       whileHover={{ y: -6 }}
@@ -181,6 +183,7 @@ function EventCard({ event }) {
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }
 

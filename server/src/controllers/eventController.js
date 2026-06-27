@@ -162,10 +162,10 @@ export const getEventById = async (req, res) => {
   }
 };
 
-// GET /api/events/search?q=keyword&category=club_night&city=mumbai
+// GET /api/events/search?q=keyword&category=club_night&city=mumbai&sort=date
 export const searchEvents = async (req, res) => {
   try {
-    const { q, category, city, min_price, max_price } = req.query;
+    const { q, category, city, sort } = req.query;
 
     let query = supabase
       .from("events")
@@ -187,7 +187,17 @@ export const searchEvents = async (req, res) => {
       query = query.eq("venues.city", city);
     }
 
-    query = query.order("date", { ascending: true });
+    // 🧠 LEARN: Dynamic sorting
+    // The sort parameter controls how results are ordered
+    switch (sort) {
+      case "popularity":
+        query = query.order("booked_count", { ascending: false });
+        break;
+      case "date":
+      default:
+        query = query.order("date", { ascending: true });
+        break;
+    }
 
     const { data, error } = await query;
 

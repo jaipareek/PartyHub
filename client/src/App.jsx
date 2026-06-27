@@ -6,6 +6,8 @@ import Navbar from "./components/layout/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import EventDetail from "./pages/EventDetail";
+import Events from "./pages/Events";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import "./App.css";
 
@@ -42,8 +44,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* TODO: Day 5 — Event Detail */}
-          {/* <Route path="/events/:id" element={<EventDetail />} /> */}
+          {/* ✅ Day 8 — Events Search & Filters */}
+          <Route path="/events" element={<Events />} />
+
+          {/* ✅ Day 7 — Event Detail */}
+          <Route path="/events/:id" element={<EventDetail />} />
 
           {/* TODO: Day 6 — Venue Detail */}
           {/* <Route path="/venues/:id" element={<VenueDetail />} /> */}
