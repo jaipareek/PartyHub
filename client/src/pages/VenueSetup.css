@@ -1,0 +1,124 @@
+/* ============================================
+   🏢 Venue Setup Wizard
+   ============================================ */
+
+.setup-page {
+  min-height: 100vh;
+  background: hsl(var(--bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.setup-page__glow { position: absolute; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 1; }
+.setup-page__glow--1 { background: rgba(124, 92, 252, 0.1); top: -10%; right: -10%; }
+.setup-page__glow--2 { background: rgba(244, 63, 94, 0.05); bottom: -10%; left: -10%; }
+
+.setup-card {
+  width: 100%;
+  max-width: 800px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.setup-card__header { text-align: center; margin-bottom: 40px; }
+
+.setup-card__logo-wrap {
+  width: 52px; height: 52px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: var(--shadow-glow);
+}
+
+.setup-card__logo-icon { font-size: 1.8rem; color: white; }
+
+.setup-card__title { font-size: 1.8rem; font-weight: 700; color: white; margin-bottom: 8px; }
+.setup-card__title em { font-family: var(--font-display); font-style: italic; font-weight: 400; color: var(--primary-light); }
+.setup-card__subtitle { font-size: 0.88rem; color: hsl(var(--muted)); max-width: 500px; margin: 0 auto; line-height: 1.5; }
+
+.setup-section { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 28px; }
+.setup-section:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 20px; }
+.setup-section h3 { font-size: 1rem; font-weight: 700; color: white; margin-bottom: 18px; }
+
+.setup-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.col-span-2 { grid-column: span 2; }
+
+.setup-field { display: flex; flex-direction: column; gap: 6px; }
+.setup-field label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: hsl(var(--muted)); }
+
+.setup-field input,
+.setup-field select,
+.setup-field textarea {
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  border-radius: var(--radius-sm);
+  color: white;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  transition: all var(--transition-fast);
+}
+
+.setup-field input:focus,
+.setup-field select:focus,
+.setup-field textarea:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 1px rgba(124, 92, 252, 0.3);
+  outline: none;
+}
+
+.setup-field textarea { resize: vertical; }
+.setup-field select option { background: hsl(240 20% 8%); color: white; }
+
+.setup-amenities { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+
+.setup-amenity {
+  padding: 10px 14px;
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.8rem; font-weight: 600;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.setup-amenity input { display: none; }
+.setup-amenity:hover { border-color: var(--primary-light); }
+.setup-amenity.active { border-color: var(--primary); background: rgba(124, 92, 252, 0.1); color: var(--primary-light); }
+
+.setup-actions {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);
+}
+
+.setup-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 28px; border-radius: var(--radius-full);
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  transition: all var(--transition-base); border: none;
+}
+
+.setup-btn--primary { background: var(--gradient-primary); color: white; }
+.setup-btn--primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+.setup-btn--ghost { background: var(--glass-strong); color: hsl(var(--text)); border: 1px solid hsl(var(--stroke)); }
+.setup-btn--ghost:hover { border-color: #ff4a4a; color: #ff4a4a; }
+.setup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+  .setup-card { padding: 24px 16px; }
+  .setup-grid { grid-template-columns: 1fr; }
+  .col-span-2 { grid-column: span 1; }
+  .setup-actions { flex-direction: column-reverse; gap: 16px; }
+  .setup-btn { width: 100%; justify-content: center; }
+}

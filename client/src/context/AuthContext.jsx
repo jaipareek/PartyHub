@@ -1,11 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
-// 🧠 LEARN: React Context
-// Context lets you share data across ALL components without prop drilling
-// Instead of passing user={user} through 10 levels of components,
-// any component can just call useAuth() to get the current user
-
 const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
@@ -13,42 +8,67 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch user profile (role, name, etc.) from profiles table
+  const fetchProfile = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) throw error;
+      setProfile(data);
+      return data;
+    } catch (err) {
+      console.error("Error fetching profile:", err.message);
+      setProfile(null);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // 🧠 LEARN: getSession checks if user is already logged in
-    // (e.g., they refreshed the page but their session is still valid)
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.access_token) {
+        localStorage.setItem("access_token", session.access_token);
+        fetchProfile(session.user.id);
+      } else {
+        localStorage.removeItem("access_token");
+        setProfile(null);
+      }
       setLoading(false);
     });
 
-    // 🧠 LEARN: onAuthStateChange is a LISTENER
-    // It fires whenever auth state changes:
-    // - User logs in → SIGNED_IN event
-    // - User logs out → SIGNED_OUT event
-    // - Token refreshes → TOKEN_REFRESHED event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.access_token) {
+          localStorage.setItem("access_token", session.access_token);
+          await fetchProfile(session.user.id);
+        } else {
+          localStorage.removeItem("access_token");
+          setProfile(null);
+        }
         setLoading(false);
       }
     );
 
-    // Cleanup listener on unmount
     return () => subscription.unsubscribe();
   }, []);
 
   // ── Auth Methods ──
 
-  const signUp = async (email, password, fullName) => {
+  const signUp = async (email, password, fullName, role = "customer") => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, role },
       },
     });
     if (error) throw error;
@@ -67,16 +87,34 @@ export function AuthProvider({ children }) {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setProfile(null);
   };
 
-  // Value object shared with all consumers of this context
+  const signInWithGoogle = async (role = "customer") => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+    if (error) throw error;
+    return data;
+  };
+
   const value = {
     user,
     session,
+    profile,
     loading,
     signUp,
     signIn,
     signOut,
+    signInWithGoogle,
+    fetchProfile,
     isAuthenticated: !!user,
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { HiArrowRightOnRectangle } from "react-icons/hi2";
 import toast from "react-hot-toast";
@@ -14,7 +14,8 @@ const NAV_LINKS = [
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, signOut, profile } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,6 +29,7 @@ function Navbar() {
     try {
       await signOut();
       toast.success("Signed out 👋");
+      navigate("/");
     } catch (error) {
       toast.error("Failed to sign out");
     }
@@ -59,28 +61,35 @@ function Navbar() {
         {/* Divider */}
         <span className="pill-navbar__divider hide-mobile" />
 
-        {/* Nav Links */}
-        {NAV_LINKS.map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            className={`pill-navbar__link ${
-              location.pathname === link.path ? "active" : ""
-            }`}
-          >
-            {link.label}
-          </Link>
-        ))}
-
-        {/* Divider */}
-        <span className="pill-navbar__divider hide-mobile" />
+        {/* Navigation Links */}
+        <div className="pill-navbar__links hide-mobile">
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`pill-navbar__link ${
+                location.pathname === link.path ? "active" : ""
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
 
         {/* Auth Section */}
         {isAuthenticated ? (
           <div className="pill-navbar__user">
-            <span className="pill-navbar__avatar" title={user?.email}>
-              {getInitials()}
-            </span>
+            {profile?.role === "venue_owner" || profile?.role === "admin" ? (
+              <Link to="/owner/dashboard" style={{ textDecoration: "none" }}>
+                <span className="pill-navbar__avatar" title="Go to Dashboard">
+                  {getInitials()}
+                </span>
+              </Link>
+            ) : (
+              <span className="pill-navbar__avatar" title={user?.email}>
+                {getInitials()}
+              </span>
+            )}
             <button
               className="pill-navbar__signout"
               onClick={handleSignOut}

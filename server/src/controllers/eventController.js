@@ -208,3 +208,95 @@ export const searchEvents = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// ============================================
+// 🎛️ CRUD Operations (Venue Owner Dashboard)
+// ============================================
+
+// POST /api/events — Create a new event
+export const createEvent = async (req, res) => {
+  try {
+    const {
+      venue_id, title, description, event_type, poster_url,
+      date, start_time, end_time, pricing, total_capacity,
+      is_student_deal, student_discount_percent, tags,
+    } = req.body;
+
+    if (!venue_id || !title || !event_type || !date || !start_time || !total_capacity) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: venue_id, title, event_type, date, start_time, total_capacity",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("events")
+      .insert({
+        venue_id,
+        title,
+        description: description || "",
+        event_type,
+        poster_url: poster_url || "",
+        date,
+        start_time,
+        end_time: end_time || null,
+        pricing: pricing || [],
+        total_capacity: parseInt(total_capacity),
+        is_student_deal: is_student_deal || false,
+        student_discount_percent: student_discount_percent || 0,
+        tags: tags || [],
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ success: true, data });
+  } catch (error) {
+    console.error("Error creating event:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// PUT /api/events/:id — Update an event
+export const updateEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const { data, error } = await supabase
+      .from("events")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Error updating event:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// DELETE /api/events/:id — Soft-delete an event
+export const deleteEvent = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from("events")
+      .update({ is_active: false })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: "Event deleted", data });
+  } catch (error) {
+    console.error("Error deleting event:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

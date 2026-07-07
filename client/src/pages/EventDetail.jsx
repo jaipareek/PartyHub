@@ -327,7 +327,9 @@ function EventDetail() {
                 />
               )}
               <div className="ed-venue__info">
-                <h3 className="ed-venue__name">{event.venues.name}</h3>
+                <Link to={`/venues/${event.venues.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                  <h3 className="ed-venue__name" style={{ cursor: "pointer" }}>{event.venues.name}</h3>
+                </Link>
                 <span className="ed-venue__category">
                   {event.venues.category}
                 </span>

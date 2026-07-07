@@ -13,6 +13,7 @@ import dotenv from "dotenv";
 import eventRoutes from "./routes/eventRoutes.js";
 import venueRoutes from "./routes/venueRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import ownerRoutes from "./routes/ownerRoutes.js";
 
 // Load environment variables from .env file FIRST
 dotenv.config();
@@ -84,6 +85,9 @@ app.use("/api/events", eventRoutes);
 
 // ✅ Venue routes (Day 2)
 app.use("/api/venues", venueRoutes);
+
+// ✅ Owner routes (Day 10)
+app.use("/api/owner", ownerRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);

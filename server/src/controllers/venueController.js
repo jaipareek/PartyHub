@@ -83,7 +83,8 @@ export const createVenue = async (req, res) => {
     const {
       name, description, category, address, city, state,
       latitude, longitude, phone, email, website,
-      images, amenities, opening_time, closing_time
+      images, amenities, opening_time, closing_time,
+      business_reg_no, id_proof
     } = req.body;
 
     // req.user is set by auth middleware (we'll add this on Day 3)
@@ -98,6 +99,7 @@ export const createVenue = async (req, res) => {
         images: images || [],
         amenities: amenities || [],
         opening_time, closing_time,
+        business_reg_no, id_proof,
       })
       .select()
       .single();

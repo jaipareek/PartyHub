@@ -6,8 +6,16 @@ import Navbar from "./components/layout/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import LoginGate from "./pages/LoginGate";
+import SignupGate from "./pages/SignupGate";
 import EventDetail from "./pages/EventDetail";
 import Events from "./pages/Events";
+import VenueDetail from "./pages/VenueDetail";
+import OwnerLogin from "./pages/OwnerLogin";
+import OwnerSignup from "./pages/OwnerSignup";
+import VenueSetup from "./pages/VenueSetup";
+import Dashboard from "./pages/Dashboard";
+import AuthCallback from "./pages/AuthCallback";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import "./App.css";
 
@@ -41,17 +49,25 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<LoginGate />} />
+          <Route path="/login/user" element={<Login />} />
+          <Route path="/signup" element={<SignupGate />} />
+          <Route path="/signup/user" element={<Signup />} />
 
-          {/* ✅ Day 8 — Events Search & Filters */}
+          {/* OAuth Callback */}
+          <Route path="/auth/callback" element={<AuthCallback />} />
+
+          {/* Events & Venues (public) */}
           <Route path="/events" element={<Events />} />
-
-          {/* ✅ Day 7 — Event Detail */}
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/venues/:id" element={<VenueDetail />} />
 
-          {/* TODO: Day 6 — Venue Detail */}
-          {/* <Route path="/venues/:id" element={<VenueDetail />} /> */}
+          {/* Venue Owner Auth */}
+          <Route path="/owner/login" element={<OwnerLogin />} />
+          <Route path="/owner/signup" element={<OwnerSignup />} />
+          <Route path="/owner/setup" element={<VenueSetup />} />
+          <Route path="/owner/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </AuthProvider>
     </Router>
