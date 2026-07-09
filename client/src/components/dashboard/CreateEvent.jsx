@@ -31,6 +31,25 @@ function CreateEvent() {
   const [totalCapacity, setTotalCapacity] = useState(200);
   const [isStudentDeal, setIsStudentDeal] = useState(false);
   const [studentDiscount, setStudentDiscount] = useState(20);
+  
+  // Pricing state
+  const [pricing, setPricing] = useState([
+    { type: "general", label: "General Entry", price: 500 }
+  ]);
+
+  const handleAddPricing = () => {
+    setPricing((prev) => [...prev, { type: "general", label: "", price: "" }]);
+  };
+
+  const handlePricingChange = (index, field, value) => {
+    const updated = [...pricing];
+    updated[index][field] = value;
+    setPricing(updated);
+  };
+
+  const handleRemovePricing = (index) => {
+    setPricing((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // Fetch venue ID on mount
   useEffect(() => {
@@ -67,14 +86,22 @@ function CreateEvent() {
         total_capacity: parseInt(totalCapacity),
         is_student_deal: isStudentDeal,
         student_discount_percent: isStudentDeal ? parseInt(studentDiscount) : 0,
-        pricing: [],
+        pricing: pricing.map((p) => ({
+          type: p.type,
+          label: p.label || "Ticket",
+          price: parseFloat(p.price) || 0,
+        })),
         tags: [],
       });
 
       toast.success("Event created! 🎉");
       // Reset form
-      setTitle(""); setDescription(""); setDate("");
-      setPosterUrl(""); setTotalCapacity(200);
+      setTitle("");
+      setDescription("");
+      setDate("");
+      setPosterUrl("");
+      setTotalCapacity(200);
+      setPricing([{ type: "general", label: "General Entry", price: 500 }]);
     } catch (err) {
       toast.error(err.response?.data?.error || "Failed to create event");
     } finally {
@@ -148,6 +175,71 @@ function CreateEvent() {
                 />
               </div>
             )}
+          </div>
+
+          {/* Ticket Pricing Tiers Builder */}
+          <div className="pricing-builder col-span-2">
+            <h3 className="pricing-builder__title">Ticket Pricing Tiers</h3>
+            
+            {pricing.map((tier, index) => (
+              <div key={index} className="pricing-builder__row">
+                <div className="create-event__field">
+                  <label>Tier Name / Label *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Early Bird, VIP Access"
+                    value={tier.label}
+                    onChange={(e) => handlePricingChange(index, "label", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="create-event__field">
+                  <label>Price (₹) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="e.g., 500"
+                    value={tier.price}
+                    onChange={(e) => handlePricingChange(index, "price", e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="create-event__field">
+                  <label>Access Type *</label>
+                  <select
+                    value={tier.type}
+                    onChange={(e) => handlePricingChange(index, "type", e.target.value)}
+                  >
+                    <option value="general">General</option>
+                    <option value="couple">Couple</option>
+                    <option value="vip">VIP</option>
+                    <option value="female">Female</option>
+                    <option value="stag">Stag</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {pricing.length > 1 && (
+                  <button
+                    type="button"
+                    className="pricing-builder__remove-btn"
+                    onClick={() => handleRemovePricing(index)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="pricing-builder__add-btn"
+              onClick={handleAddPricing}
+            >
+              + Add Ticket Tier
+            </button>
           </div>
         </div>
 

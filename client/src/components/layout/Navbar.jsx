@@ -48,6 +48,11 @@ function Navbar() {
     return user?.email?.[0]?.toUpperCase() || "?";
   };
 
+  const activeLinks = [...NAV_LINKS];
+  if (isAuthenticated && profile?.role === "customer") {
+    activeLinks.push({ label: "My Tickets", path: "/my-bookings" });
+  }
+
   return (
     <nav className="pill-navbar">
       <div className={`pill-navbar__inner ${scrolled ? "scrolled" : ""}`}>
@@ -63,7 +68,7 @@ function Navbar() {
 
         {/* Navigation Links */}
         <div className="pill-navbar__links hide-mobile">
-          {NAV_LINKS.map((link) => (
+          {activeLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -79,9 +84,15 @@ function Navbar() {
         {/* Auth Section */}
         {isAuthenticated ? (
           <div className="pill-navbar__user">
-            {profile?.role === "venue_owner" || profile?.role === "admin" ? (
+            {profile?.role === "admin" ? (
+              <Link to="/admin/dashboard" style={{ textDecoration: "none" }}>
+                <span className="pill-navbar__avatar" title="Go to Admin Dashboard">
+                  {getInitials()}
+                </span>
+              </Link>
+            ) : profile?.role === "venue_owner" ? (
               <Link to="/owner/dashboard" style={{ textDecoration: "none" }}>
-                <span className="pill-navbar__avatar" title="Go to Dashboard">
+                <span className="pill-navbar__avatar" title="Go to Partner Dashboard">
                   {getInitials()}
                 </span>
               </Link>

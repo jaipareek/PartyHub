@@ -10,11 +10,14 @@ import LoginGate from "./pages/LoginGate";
 import SignupGate from "./pages/SignupGate";
 import EventDetail from "./pages/EventDetail";
 import Events from "./pages/Events";
+import Venues from "./pages/Venues";
 import VenueDetail from "./pages/VenueDetail";
 import OwnerLogin from "./pages/OwnerLogin";
 import OwnerSignup from "./pages/OwnerSignup";
 import VenueSetup from "./pages/VenueSetup";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import MyBookings from "./pages/MyBookings";
 import AuthCallback from "./pages/AuthCallback";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import "./App.css";
@@ -60,13 +63,16 @@ function App() {
           {/* Events & Venues (public) */}
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventDetail />} />
+          <Route path="/venues" element={<Venues />} />
           <Route path="/venues/:id" element={<VenueDetail />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
 
           {/* Venue Owner Auth */}
           <Route path="/owner/login" element={<OwnerLogin />} />
           <Route path="/owner/signup" element={<OwnerSignup />} />
           <Route path="/owner/setup" element={<VenueSetup />} />
           <Route path="/owner/dashboard" element={<Dashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </AuthProvider>

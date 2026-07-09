@@ -594,3 +594,221 @@
     padding: 0 16px 60px;
   }
 }
+
+/* ============================================
+   ⭐️ Venue Review & Safety Ratings Feed Styles
+   ============================================ */
+.venue-review-form-section {
+  max-width: 1280px;
+  margin: 40px auto 0;
+  padding: 0 40px;
+}
+
+.venue-review-form-card {
+  padding: 32px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  text-align: left;
+}
+
+.venue-review-form-card h3 {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: white;
+}
+
+.venue-review-form-card p {
+  font-size: 0.88rem;
+  color: hsl(var(--muted));
+  margin: 0 0 24px 0;
+}
+
+.venue-review-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.venue-review-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.venue-review-form__row label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: hsl(var(--muted));
+  letter-spacing: 0.5px;
+}
+
+.venue-review-form__stars {
+  display: flex;
+  gap: 6px;
+}
+
+.venue-review-form__star {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.venue-review-form__star:hover {
+  transform: scale(1.15);
+}
+
+.venue-review-form__star.filled {
+  color: var(--warning);
+}
+
+.venue-review-form__submit {
+  margin-top: 20px;
+  padding: 12px 28px;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.venue-review-form__submit:hover {
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+/* ── Customer Reviews Feed ── */
+.venue-reviews-feed {
+  max-width: 1280px;
+  margin: 48px auto 0;
+  padding: 0 40px;
+  text-align: left;
+}
+
+.venue-reviews-feed__heading {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.venue-reviews-feed__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.venue-review-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.venue-review-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.venue-review-card__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.venue-review-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: rgba(124, 92, 252, 0.1);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  overflow: hidden;
+}
+
+.venue-review-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venue-review-card__name {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: white;
+  margin: 0 0 2px 0;
+}
+
+.venue-review-card__date {
+  font-size: 0.78rem;
+  color: hsl(var(--muted));
+}
+
+.venue-review-card__rating {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.venue-review-card__comment {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.venue-review-card__metrics {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.venue-review-card__metrics span {
+  font-size: 0.72rem;
+  color: hsl(var(--muted));
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .venue-review-form-section,
+  .venue-reviews-feed {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .venue-review-form-section,
+  .venue-reviews-feed {
+    padding: 0 16px;
+  }
+  
+  .venue-review-card__header {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+

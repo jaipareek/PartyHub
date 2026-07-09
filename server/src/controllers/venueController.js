@@ -4,7 +4,7 @@
 
 import supabase from "../config/supabase.js";
 
-// GET /api/venues — Get all active venues
+// GET /api/venues — Get all active verified venues
 export const getVenues = async (req, res) => {
   try {
     const { city, category } = req.query;
@@ -12,7 +12,8 @@ export const getVenues = async (req, res) => {
     let query = supabase
       .from("venues")
       .select("*")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("is_verified", true);
 
     if (city) query = query.ilike("city", `%${city}%`);
     if (category) query = query.eq("category", category);
@@ -28,7 +29,7 @@ export const getVenues = async (req, res) => {
   }
 };
 
-// GET /api/venues/:id — Get single venue with its events
+// GET /api/venues/:id — Get single venue if verified with its events
 export const getVenueById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -44,6 +45,7 @@ export const getVenueById = async (req, res) => {
         events (*)
       `)
       .eq("id", id)
+      .eq("is_verified", true)
       .single();
 
     if (error) throw error;
@@ -57,10 +59,21 @@ export const getVenueById = async (req, res) => {
   }
 };
 
-// GET /api/venues/:id/events — Get all events for a venue
+// GET /api/venues/:id/events — Get all events for a verified venue
 export const getVenueEvents = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Check if venue itself is verified
+    const { data: venue, error: venueError } = await supabase
+      .from("venues")
+      .select("is_verified")
+      .eq("id", id)
+      .single();
+
+    if (venueError || !venue || !venue.is_verified) {
+      return res.status(404).json({ success: false, error: "Venue not found or unverified" });
+    }
 
     const { data, error } = await supabase
       .from("events")

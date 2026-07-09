@@ -16,6 +16,7 @@ import {
   HiStar,
 } from "react-icons/hi2";
 import api from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 import EventCard from "../components/ui/EventCard";
 import toast from "react-hot-toast";
 import "./VenueDetail.css";
@@ -63,21 +64,62 @@ const AMENITY_ICONS = {
 };
 
 function VenueDetail() {
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [venue, setVenue] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ── Fetch venue data ──
+  // Reviews states
+  const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState({
+    overall: "0.0",
+    safety: "0.0",
+    music: "0.0",
+    food: "0.0",
+    crowd: "0.0",
+    atmosphere: "0.0",
+    count: 0,
+  });
+  const [eligible, setEligible] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+
+  // Review form states
+  const [safetyRating, setSafetyRating] = useState(5);
+  const [musicRating, setMusicRating] = useState(5);
+  const [foodRating, setFoodRating] = useState(5);
+  const [crowdRating, setCrowdRating] = useState(5);
+  const [atmosphereRating, setAtmosphereRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  // ── Fetch venue data & reviews ──
   useEffect(() => {
-    const fetchVenue = async () => {
+    const fetchVenueAndReviews = async () => {
       try {
         setLoading(true);
+        // Fetch venue info
         const res = await api.get(`/venues/${id}`);
         setVenue(res.data.data);
+
+        // Fetch reviews
+        const reviewsRes = await api.get(`/reviews/venue/${id}`);
+        if (reviewsRes.data?.success) {
+          setReviews(reviewsRes.data.data);
+          setReviewStats(reviewsRes.data.stats);
+        }
+
+        // Check eligibility
+        if (user) {
+          const eligRes = await api.get(`/reviews/venue/${id}/check-eligibility`);
+          if (eligRes.data?.success) {
+            setEligible(eligRes.data.eligible);
+            setHasReviewed(eligRes.data.hasReviewed);
+          }
+        }
       } catch (err) {
-        console.error("Failed to fetch venue:", err);
+        console.error("Failed to fetch venue info:", err);
         toast.error("Venue not found");
         navigate("/");
       } finally {
@@ -85,9 +127,42 @@ function VenueDetail() {
       }
     };
 
-    fetchVenue();
+    fetchVenueAndReviews();
     window.scrollTo(0, 0);
-  }, [id, navigate]);
+  }, [id, user, navigate]);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSubmittingReview(true);
+      const res = await api.post("/reviews", {
+        venue_id: id,
+        music_rating: musicRating,
+        food_rating: foodRating,
+        crowd_rating: crowdRating,
+        safety_rating: safetyRating,
+        atmosphere_rating: atmosphereRating,
+        comment: reviewComment,
+      });
+
+      if (res.data?.success) {
+        toast.success("Review submitted! ⭐️");
+        setHasReviewed(true);
+        setReviewComment("");
+        // Reload reviews & stats
+        const reviewsRes = await api.get(`/reviews/venue/${id}`);
+        if (reviewsRes.data?.success) {
+          setReviews(reviewsRes.data.data);
+          setReviewStats(reviewsRes.data.stats);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+      toast.error(err.response?.data?.error || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // ── Loading state ──
   if (loading) {
@@ -404,6 +479,189 @@ function VenueDetail() {
             Based on {MOCK_SCORE.reviewCount} reviews · Full review system coming soon
           </p>
         </div>
+      </motion.section>
+
+      {/* ═══════════════════════════
+         PARTYHUB SCORE & REVIEWS
+       ═══════════════════════════ */}
+      <motion.section
+        className="venue-score"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.65 }}
+      >
+        <div className="venue-score__card">
+          <div className="venue-score__header">
+            <h2 className="venue-score__title">
+              <HiStar style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--warning)" }} />
+              PartyHub Score
+            </h2>
+            <div className="venue-score__overall">
+              <span className="venue-score__number">
+                {reviewStats.count > 0 ? reviewStats.overall : "0.0"}
+              </span>
+              <span className="venue-score__max">/ 5.0</span>
+            </div>
+          </div>
+
+          <div className="venue-score__bars">
+            {[
+              { label: "Music", value: parseFloat(reviewStats.music || 0), icon: <HiMusicalNote /> },
+              { label: "Food", value: parseFloat(reviewStats.food || 0), icon: "🍽️" },
+              { label: "Crowd", value: parseFloat(reviewStats.crowd || 0), icon: "👥" },
+              { label: "Safety", value: parseFloat(reviewStats.safety || 0), icon: "🛡️" },
+              { label: "Atmosphere", value: parseFloat(reviewStats.atmosphere || 0), icon: "✨" },
+            ].map((item, i) => (
+              <div key={i} className="venue-score-bar">
+                <span className="venue-score-bar__label">{item.label}</span>
+                <div className="venue-score-bar__track">
+                  <motion.div
+                    className="venue-score-bar__fill"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(item.value / 5) * 100}%` }}
+                    transition={{ duration: 1, delay: 0.7 + i * 0.1 }}
+                  />
+                </div>
+                <span className="venue-score-bar__value">
+                  {reviewStats.count > 0 ? item.value.toFixed(1) : "0.0"}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <p className="venue-score__subtitle">
+            Based on {reviewStats.count} review{reviewStats.count !== 1 ? "s" : ""}
+          </p>
+        </div>
+      </motion.section>
+
+      {/* Review Submission Form */}
+      {eligible && !hasReviewed && (
+        <motion.section
+          className="venue-review-form-section"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="venue-review-form-card">
+            <h3>Share Your Vibe</h3>
+            <p>You booked a ticket to this venue! Share your rating to help others plan their night out.</p>
+            
+            <form onSubmit={handleReviewSubmit} className="venue-review-form">
+              <div className="venue-review-form__grid">
+                {[
+                  { label: "Safety Rating", state: safetyRating, setter: setSafetyRating },
+                  { label: "Music Rating", state: musicRating, setter: setMusicRating },
+                  { label: "Food Rating", state: foodRating, setter: setFoodRating },
+                  { label: "Crowd Rating", state: crowdRating, setter: setCrowdRating },
+                  { label: "Atmosphere Rating", state: atmosphereRating, setter: setAtmosphereRating },
+                ].map((item, index) => (
+                  <div key={index} className="venue-review-form__row">
+                    <label>{item.label}</label>
+                    <div className="venue-review-form__stars">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          className={`venue-review-form__star ${item.state >= star ? "filled" : ""}`}
+                          onClick={() => item.setter(star)}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px", textAlign: "left" }}>
+                <label style={{ fontSize: "0.72rem", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", color: "hsl(var(--muted))" }}>Comment</label>
+                <textarea
+                  rows={3}
+                  placeholder="Tell us about the entry vibe, wait times, music genre, or drinks..."
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  style={{
+                    width: "100%",
+                    background: "var(--glass-strong)",
+                    border: "1px solid hsl(var(--stroke))",
+                    borderRadius: "var(--radius-sm)",
+                    color: "white",
+                    padding: "10px 14px",
+                    fontSize: "0.88rem",
+                    resize: "vertical",
+                    marginTop: "6px"
+                  }}
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="venue-review-form__submit"
+                disabled={submittingReview}
+              >
+                {submittingReview ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          </div>
+        </motion.section>
+      )}
+
+      {/* Customer Reviews Feed */}
+      <motion.section
+        className="venue-reviews-feed"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="venue-reviews-feed__heading">Customer Reviews</h2>
+        {reviews.length === 0 ? (
+          <div className="venue-events__empty">
+            <p>No reviews yet. Be the first to review after checking in!</p>
+          </div>
+        ) : (
+          <div className="venue-reviews-feed__list">
+            {reviews.map((review) => (
+              <div key={review.id} className="venue-review-card">
+                <div className="venue-review-card__header">
+                  <div className="venue-review-card__user">
+                    <div className="venue-review-card__avatar">
+                      {review.user?.avatar_url ? (
+                        <img src={review.user.avatar_url} alt={review.user.full_name} />
+                      ) : (
+                        review.user?.full_name?.[0]?.toUpperCase() || "?"
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="venue-review-card__name">{review.user?.full_name || "Anonymous User"}</h4>
+                      <span className="venue-review-card__date">
+                        {new Date(review.created_at).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="venue-review-card__rating">
+                    ★ {review.overall_score?.toFixed(1)}
+                  </div>
+                </div>
+                {review.comment && (
+                  <p className="venue-review-card__comment">{review.comment}</p>
+                )}
+                {/* Micro scorecard ratings */}
+                <div className="venue-review-card__metrics">
+                  <span>🎵 Music: {review.music_rating || "—"}</span>
+                  <span>🍔 Food: {review.food_rating || "—"}</span>
+                  <span>👥 Crowd: {review.crowd_rating || "—"}</span>
+                  <span>🛡️ Safety: {review.safety_rating || "—"}</span>
+                  <span>✨ Atmosphere: {review.atmosphere_rating || "—"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.section>
 
       {/* ═══════════════════════════

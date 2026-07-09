@@ -14,6 +14,9 @@ import eventRoutes from "./routes/eventRoutes.js";
 import venueRoutes from "./routes/venueRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 // Load environment variables from .env file FIRST
 dotenv.config();
@@ -88,6 +91,15 @@ app.use("/api/venues", venueRoutes);
 
 // ✅ Owner routes (Day 10)
 app.use("/api/owner", ownerRoutes);
+
+// ✅ Admin routes
+app.use("/api/admin", adminRoutes);
+
+// ✅ Booking routes
+app.use("/api/bookings", bookingRoutes);
+
+// ✅ Review routes
+app.use("/api/reviews", reviewRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);

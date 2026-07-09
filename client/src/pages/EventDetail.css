@@ -675,3 +675,236 @@
     padding: 24px 16px 0;
   }
 }
+
+/* ── Quantity Selector ── */
+.ed-pricing__qty-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.ed-pricing__qty-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: hsl(var(--text));
+}
+
+.ed-pricing__qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ed-pricing__qty-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--glass-strong);
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.ed-pricing__qty-btn:hover:not(:disabled) {
+  border-color: var(--primary-light);
+  color: var(--primary-light);
+}
+
+.ed-pricing__qty-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ed-pricing__qty-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* ── Checkout Modal Overlay ── */
+.checkout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.checkout-modal {
+  background: hsl(240 20% 6%);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+  padding: 32px;
+  color: white;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(124, 92, 252, 0.05);
+}
+
+.checkout-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: hsl(var(--muted));
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.checkout-modal__close:hover {
+  color: white;
+}
+
+.checkout-modal__title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.checkout-modal__subtitle {
+  color: hsl(var(--muted));
+  font-size: 0.88rem;
+  margin: 0 0 24px 0;
+}
+
+/* ── Breakdown ── */
+.checkout-summary {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.checkout-summary__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 10px;
+}
+
+.checkout-summary__row:last-child {
+  margin-bottom: 0;
+}
+
+.checkout-summary__row--total {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 12px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.checkout-payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.checkout-form-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.checkout-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkout-input-wrapper label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: hsl(var(--muted));
+  letter-spacing: 0.5px;
+}
+
+.checkout-input-wrapper input {
+  padding: 12px 14px;
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 0.88rem;
+}
+
+.checkout-input-wrapper input:focus {
+  border-color: var(--primary-light);
+  outline: none;
+}
+
+/* ── Success Screen ── */
+.checkout-success {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.checkout-success__icon {
+  font-size: 3.5rem;
+  color: #10b981;
+  margin-bottom: 16px;
+}
+
+.checkout-success__title {
+  font-size: 1.5rem;
+  font-weight: 850;
+  margin: 0 0 8px 0;
+}
+
+.checkout-success__msg {
+  color: hsl(var(--muted));
+  font-size: 0.92rem;
+  margin: 0 0 24px 0;
+}
+
+.checkout-success__box {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 28px;
+}
+
+.checkout-success__code-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #10b981;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.checkout-success__code {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 2px;
+}
+

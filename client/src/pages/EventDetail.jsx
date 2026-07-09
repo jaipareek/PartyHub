@@ -12,6 +12,7 @@ import {
   HiArrowTopRightOnSquare,
 } from "react-icons/hi2";
 import api from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 import EventCard from "../components/ui/EventCard";
 import toast from "react-hot-toast";
 import "./EventDetail.css";
@@ -23,11 +24,71 @@ import "./EventDetail.css";
 function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [event, setEvent] = useState(null);
   const [relatedEvents, setRelatedEvents] = useState([]);
   const [selectedTier, setSelectedTier] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Booking states
+  const [quantity, setQuantity] = useState(1);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingResult, setBookingResult] = useState(null);
+
+  // Payment mock states
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+
+  const handleBookClick = () => {
+    if (!user) {
+      toast.error("Please sign in to book event tickets!");
+      navigate("/login");
+      return;
+    }
+    
+    // Check if event has available spots
+    if (event.booked_count + quantity > event.total_capacity) {
+      toast.error("Not enough spots left for this quantity!");
+      return;
+    }
+    
+    setCheckoutOpen(true);
+  };
+
+  const handleCheckoutSubmit = async (e) => {
+    e.preventDefault();
+    if (!cardNumber || !expiry || !cvv) {
+      toast.error("Please fill in all payment details");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await api.post("/bookings", {
+        event_id: event.id,
+        tier_type: event.pricing[selectedTier].type,
+        quantity,
+      });
+
+      if (res.data?.success) {
+        toast.success("Booking confirmed! 🎟️");
+        setBookingResult(res.data.data.booking_code);
+        // Update capacity counter in page state
+        setEvent((prev) => ({
+          ...prev,
+          booked_count: (prev.booked_count || 0) + quantity,
+        }));
+      }
+    } catch (err) {
+      console.error("Booking transaction failed:", err);
+      toast.error(err.response?.data?.error || "Transaction failed. Try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // ── Fetch event data ──
   useEffect(() => {
@@ -265,7 +326,10 @@ function EventDetail() {
                     className={`ed-pricing__tier ${
                       selectedTier === i ? "ed-pricing__tier--selected" : ""
                     }`}
-                    onClick={() => setSelectedTier(i)}
+                    onClick={() => {
+                      setSelectedTier(i);
+                      setQuantity(1); // Reset quantity when changing tiers
+                    }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                       <div className="ed-pricing__tier-radio" />
@@ -283,9 +347,33 @@ function EventDetail() {
                 ))}
               </div>
 
-              <button className="ed-pricing__book-btn">
+              {/* Quantity selector */}
+              <div className="ed-pricing__qty-container">
+                <span className="ed-pricing__qty-label">Quantity</span>
+                <div className="ed-pricing__qty-controls">
+                  <button
+                    type="button"
+                    className="ed-pricing__qty-btn"
+                    disabled={quantity <= 1}
+                    onClick={() => setQuantity((q) => q - 1)}
+                  >
+                    -
+                  </button>
+                  <span className="ed-pricing__qty-val">{quantity}</span>
+                  <button
+                    type="button"
+                    className="ed-pricing__qty-btn"
+                    disabled={quantity >= 5}
+                    onClick={() => setQuantity((q) => q + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <button className="ed-pricing__book-btn" onClick={handleBookClick}>
                 <HiTicket />
-                Book Now — ₹{event.pricing[selectedTier]?.price}
+                Book {quantity} Pass{quantity > 1 ? "es" : ""} — ₹{(event.pricing[selectedTier]?.price || 0) * quantity}
               </button>
             </div>
           )}
@@ -371,10 +459,123 @@ function EventDetail() {
           <span>Starting from</span>
           ₹{lowestPrice}+
         </div>
-        <button className="ed-sticky-cta__btn">
+        <button className="ed-sticky-cta__btn" onClick={handleBookClick}>
           Book Now
         </button>
       </div>
+
+      {/* Checkout Modal */}
+      {checkoutOpen && (
+        <div className="checkout-overlay">
+          <div className="checkout-modal">
+            <button
+              className="checkout-modal__close"
+              onClick={() => {
+                setCheckoutOpen(false);
+                setBookingResult(null);
+                setCardNumber("");
+                setExpiry("");
+                setCvv("");
+              }}
+            >
+              ✕
+            </button>
+
+            {!bookingResult ? (
+              <>
+                <h2 className="checkout-modal__title">Complete Booking</h2>
+                <p className="checkout-modal__subtitle">{event.title}</p>
+
+                {/* Summary Table */}
+                <div className="checkout-summary">
+                  <div className="checkout-summary__row">
+                    <span>
+                      {event.pricing[selectedTier]?.label} × {quantity}
+                    </span>
+                    <span>₹{(event.pricing[selectedTier]?.price || 0) * quantity}</span>
+                  </div>
+                  <div className="checkout-summary__row">
+                    <span>Booking Fees (Free)</span>
+                    <span>₹0</span>
+                  </div>
+                  <div className="checkout-summary__row checkout-summary__row--total">
+                    <span>Total Amount</span>
+                    <span>₹{(event.pricing[selectedTier]?.price || 0) * quantity}</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleCheckoutSubmit} className="checkout-payment-form">
+                  <div className="checkout-input-wrapper">
+                    <label>Card Number</label>
+                    <input
+                      type="text"
+                      placeholder="1234 5678 1234 5678"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      maxLength={19}
+                      required
+                    />
+                  </div>
+
+                  <div className="checkout-form-row">
+                    <div className="checkout-input-wrapper">
+                      <label>Expiry Date</label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        value={expiry}
+                        onChange={(e) => setExpiry(e.target.value)}
+                        maxLength={5}
+                        required
+                      />
+                    </div>
+                    <div className="checkout-input-wrapper">
+                      <label>CVV</label>
+                      <input
+                        type="password"
+                        placeholder="123"
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value)}
+                        maxLength={3}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="ed-pricing__book-btn"
+                    style={{ marginTop: "16px" }}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Processing..." : `Pay ₹${(event.pricing[selectedTier]?.price || 0) * quantity}`}
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="checkout-success">
+                <div className="checkout-success__icon">✓</div>
+                <h2 className="checkout-success__title">Booking Confirmed!</h2>
+                <p className="checkout-success__msg">Your passes are ready. See you at the door! 🥂</p>
+
+                <div className="checkout-success__box">
+                  <span className="checkout-success__code-label">Booking Code</span>
+                  <span className="checkout-success__code">{bookingResult}</span>
+                </div>
+
+                <Link
+                  to="/my-bookings"
+                  onClick={() => setCheckoutOpen(false)}
+                  className="ed-pricing__book-btn"
+                  style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", alignItems: "center" }}
+                >
+                  Go to My Tickets
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

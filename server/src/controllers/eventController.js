@@ -19,11 +19,12 @@ export const getEvents = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (
-          id, name, city, images, category
+        venues!inner (
+          id, name, city, images, category, is_verified
         )
       `)
       .eq("is_active", true)
+      .eq("venues.is_verified", true)
       .order("date", { ascending: true });
 
     if (error) throw error;
@@ -46,9 +47,10 @@ export const getTrendingEvents = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (id, name, city, images, category)
+        venues!inner (id, name, city, images, category, is_verified)
       `)
       .eq("is_active", true)
+      .eq("venues.is_verified", true)
       .order("booked_count", { ascending: false })
       .limit(10);
 
@@ -69,9 +71,10 @@ export const getTonightEvents = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (id, name, city, images, category)
+        venues!inner (id, name, city, images, category, is_verified)
       `)
       .eq("is_active", true)
+      .eq("venues.is_verified", true)
       .eq("date", today)
       .order("start_time", { ascending: true });
 
@@ -102,9 +105,10 @@ export const getWeekendEvents = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (id, name, city, images, category)
+        venues!inner (id, name, city, images, category, is_verified)
       `)
       .eq("is_active", true)
+      .eq("venues.is_verified", true)
       .or(`date.eq.${satStr},date.eq.${sunStr}`)
       .order("date", { ascending: true });
 
@@ -123,9 +127,10 @@ export const getStudentDeals = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (id, name, city, images, category)
+        venues!inner (id, name, city, images, category, is_verified)
       `)
       .eq("is_active", true)
+      .eq("venues.is_verified", true)
       .eq("is_student_deal", true)
       .order("date", { ascending: true });
 
@@ -146,9 +151,10 @@ export const getEventById = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (*)
+        venues!inner (*)
       `)
       .eq("id", id)
+      .eq("venues.is_verified", true)
       .single(); // 🧠 .single() returns one object instead of an array
 
     if (error) throw error;
@@ -171,9 +177,10 @@ export const searchEvents = async (req, res) => {
       .from("events")
       .select(`
         *,
-        venues (id, name, city, images, category)
+        venues!inner (id, name, city, images, category, is_verified)
       `)
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("venues.is_verified", true);
 
     // 🧠 LEARN: Chaining filters conditionally
     // We only add a filter if the query parameter exists
