@@ -908,3 +908,131 @@
   letter-spacing: 2px;
 }
 
+/* ============================================
+   👥 Event Detail Squad Coordination Styles
+   ============================================ */
+.ed-squads__create-toggle-btn {
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  color: var(--primary-light);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ed-squads__create-toggle-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.ed-squads__create-form {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: var(--radius-md);
+}
+
+.ed-squads__create-form input {
+  flex: 1;
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  border-radius: var(--radius-sm);
+  color: white;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+}
+
+.ed-squads__create-form input:focus {
+  border-color: var(--primary-light);
+  outline: none;
+}
+
+.ed-squads__submit-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  font-size: 0.88rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ed-squads__submit-btn:hover {
+  box-shadow: var(--shadow-glow);
+}
+
+.ed-squads__empty {
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: hsl(var(--muted));
+  font-size: 0.88rem;
+}
+
+.ed-squads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ed-squad-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.ed-squad-row:hover {
+  border-color: rgba(124, 92, 252, 0.3);
+}
+
+.ed-squad-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ed-squad-row__name {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: white;
+  margin: 0;
+}
+
+.ed-squad-row__meta {
+  font-size: 0.8rem;
+  color: hsl(var(--muted));
+}
+
+.ed-squad-row__join-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ed-squad-row:hover .ed-squad-row__join-btn {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+

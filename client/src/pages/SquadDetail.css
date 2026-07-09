@@ -1,0 +1,248 @@
+/* ============================================
+   👥 Social Squad Coordinator Stylesheet
+   ============================================ */
+.squad-detail-page {
+  min-height: 100vh;
+  background: hsl(240 20% 4%);
+  padding: 120px 24px 60px 24px;
+  color: white;
+}
+
+.squad-detail-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.squad-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 40px;
+  gap: 20px;
+}
+
+.squad-detail-header h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+}
+
+.squad-detail-header h1 em {
+  font-style: normal;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.squad-detail-header p {
+  color: hsl(var(--muted));
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* ── Split Grid ── */
+.squad-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1.2fr;
+  gap: 32px;
+}
+
+/* ── Left Column: Checklist ── */
+.squad-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  text-align: left;
+}
+
+.squad-card__heading {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+  color: white;
+}
+
+.squad-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.squad-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.squad-member-row__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.squad-member-row__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(124, 92, 252, 0.1);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  color: var(--primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  overflow: hidden;
+}
+
+.squad-member-row__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.squad-member-row__name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: white;
+}
+
+.squad-member-row__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.squad-member-row__badge--booked {
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.squad-member-row__badge--pending {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* ── Right Column: Info & Links ── */
+.squad-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.squad-event-mini-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.squad-event-mini-card__poster {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.squad-event-mini-card__details {
+  padding: 24px;
+  text-align: left;
+}
+
+.squad-event-mini-card__title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: white;
+}
+
+.squad-event-mini-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: hsl(var(--muted));
+  margin-top: 14px;
+}
+
+.squad-event-mini-card__meta div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.squad-invite-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 24px;
+  text-align: left;
+}
+
+.squad-invite-card h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: white;
+}
+
+.squad-invite-card p {
+  font-size: 0.8rem;
+  color: hsl(var(--muted));
+  margin: 0 0 16px 0;
+}
+
+.squad-invite-card__box {
+  display: flex;
+  gap: 8px;
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  padding: 8px 12px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.squad-invite-card__code {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.squad-invite-card__copy-btn {
+  background: none;
+  border: none;
+  color: var(--primary-light);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.squad-invite-card__copy-btn:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .squad-grid {
+    grid-template-columns: 1fr;
+  }
+}

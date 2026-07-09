@@ -42,6 +42,48 @@ function EventDetail() {
   const [expiry, setExpiry] = useState("");
   const [cvv, setCvv] = useState("");
 
+  // Squad states
+  const [squads, setSquads] = useState([]);
+  const [fetchingSquads, setFetchingSquads] = useState(false);
+  const [showCreateSquad, setShowCreateSquad] = useState(false);
+  const [squadName, setSquadName] = useState("");
+
+  const fetchEventSquads = async () => {
+    try {
+      setFetchingSquads(true);
+      const res = await api.get(`/squads/event/${id}`);
+      if (res.data?.success) {
+        setSquads(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load squads:", err);
+    } finally {
+      setFetchingSquads(false);
+    }
+  };
+
+  const handleCreateSquad = async (e) => {
+    e.preventDefault();
+    if (!squadName.trim()) return;
+
+    try {
+      const res = await api.post("/squads", {
+        name: squadName,
+        event_id: id,
+      });
+
+      if (res.data?.success) {
+        toast.success("Squad launched! 🍻");
+        setSquadName("");
+        setShowCreateSquad(false);
+        navigate(`/squads/${res.data.data.id}`);
+      }
+    } catch (err) {
+      console.error("Failed to create squad:", err);
+      toast.error(err.response?.data?.error || "Failed to create squad");
+    }
+  };
+
   const handleBookClick = () => {
     if (!user) {
       toast.error("Please sign in to book event tickets!");
@@ -117,6 +159,7 @@ function EventDetail() {
     };
 
     fetchEvent();
+    fetchEventSquads();
     window.scrollTo(0, 0);
   }, [id, navigate]);
 
@@ -306,6 +349,61 @@ function EventDetail() {
               </div>
             </div>
           )}
+
+          {/* Squads Coordinator Section */}
+          <div className="ed-squads-section" style={{ marginTop: "32px", borderTop: "1px solid var(--border)", paddingTop: "32px", textAlign: "left" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <p className="ed-about__label" style={{ margin: 0 }}>👥 Event Squads</p>
+              {user && (
+                <button
+                  type="button"
+                  className="ed-squads__create-toggle-btn"
+                  onClick={() => setShowCreateSquad(!showCreateSquad)}
+                >
+                  {showCreateSquad ? "Cancel" : "+ Launch a Squad"}
+                </button>
+              )}
+            </div>
+
+            {showCreateSquad && (
+              <form onSubmit={handleCreateSquad} className="ed-squads__create-form">
+                <input
+                  type="text"
+                  placeholder="Squad Name (e.g. Rave Crew, Friday Night out)..."
+                  value={squadName}
+                  onChange={(e) => setSquadName(e.target.value)}
+                  required
+                />
+                <button type="submit" className="ed-squads__submit-btn">
+                  Create Squad
+                </button>
+              </form>
+            )}
+
+            {fetchingSquads ? (
+              <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem" }}>Loading squads...</p>
+            ) : squads.length === 0 ? (
+              <div className="ed-squads__empty">
+                <p>No active squads for this event yet. Launch one to coordinate with your friends!</p>
+              </div>
+            ) : (
+              <div className="ed-squads-list">
+                {squads.map((squad) => (
+                  <div key={squad.id} className="ed-squad-row">
+                    <div className="ed-squad-row__info">
+                      <h4 className="ed-squad-row__name">{squad.name}</h4>
+                      <span className="ed-squad-row__meta">
+                        Host: {squad.leader_name} · {squad.member_count} member{squad.member_count !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <Link to={`/squads/${squad.id}`} className="ed-squad-row__join-btn" style={{ textDecoration: "none" }}>
+                      View Crew
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* ── Right Column ── */}
