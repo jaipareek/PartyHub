@@ -563,4 +563,17 @@
   transform: translateY(-1px);
 }
 
+/* 🏠 My Venue Redesign Adjustments */
+.my-venue-redesign {
+  margin-top: 12px;
+}
+
+.my-venue-val {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 4px 0 0 0;
+  text-align: left;
+}
+
 

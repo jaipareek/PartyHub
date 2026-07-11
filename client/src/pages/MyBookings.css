@@ -249,3 +249,36 @@
     text-align: center;
   }
 }
+
+/* 🍽️ Table Reservation Cards */
+.table-reservation-stub {
+  grid-template-columns: 1fr !important;
+}
+
+.table-reservation-stub:hover {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.status-pending {
+  background: rgba(245, 158, 11, 0.08) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+.status-approved {
+  background: rgba(16, 185, 129, 0.08) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+.status-rejected {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+.status-revoked {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: hsl(var(--muted)) !important;
+  border: 1px solid var(--border) !important;
+}

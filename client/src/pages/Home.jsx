@@ -156,6 +156,47 @@ function Home() {
     }
   }, [isAuthenticated, profile]);
 
+  // Owner dashboard states
+  const [ownerVenue, setOwnerVenue] = useState(null);
+  const [ownerEventsList, setOwnerEventsList] = useState([]);
+  const [ownerReservationsList, setOwnerReservationsList] = useState([]);
+
+  useEffect(() => {
+    if (isAuthenticated && profile?.role === "venue_owner") {
+      fetchOwnerDashboardData();
+    }
+  }, [isAuthenticated, profile]);
+
+  // Admin auto redirect
+  useEffect(() => {
+    if (isAuthenticated && profile?.role === "admin") {
+      navigate("/admin/dashboard");
+    }
+  }, [isAuthenticated, profile, navigate]);
+
+  const fetchOwnerDashboardData = async () => {
+    try {
+      setDashboardLoading(true);
+      const profileRes = await api.get("/owner/profile");
+      if (profileRes.data?.success && profileRes.data.data.venue) {
+        const venue = profileRes.data.data.venue;
+        setOwnerVenue(venue);
+
+        const [eventsRes, reservationsRes] = await Promise.all([
+          api.get("/owner/events"),
+          api.get(`/table-reservations/venue/${venue.id}`)
+        ]);
+
+        if (eventsRes.data?.success) setOwnerEventsList(eventsRes.data.data);
+        if (reservationsRes.data?.success) setOwnerReservationsList(reservationsRes.data.data);
+      }
+    } catch (err) {
+      console.error("Error loading owner home dashboard:", err);
+    } finally {
+      setDashboardLoading(false);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       setDashboardLoading(true);
@@ -245,14 +286,13 @@ function Home() {
     });
   };
 
-  // ── RENDER COMPONENT ──
-  // Check if owner or admin, redirect them to dashboard directly
-  if (isAuthenticated && (profile?.role === "venue_owner" || profile?.role === "admin")) {
+  // Check if admin, redirect them to admin dashboard directly
+  if (isAuthenticated && profile?.role === "admin") {
     return (
       <div className="venue-detail__loading">
-        <p style={{ color: "hsl(var(--muted))" }}>Redirecting to dashboard...</p>
-        <button onClick={() => navigate("/owner/dashboard")} className="ed-success-btn" style={{ marginTop: "20px" }}>
-          Go to Dashboard
+        <p style={{ color: "hsl(var(--muted))" }}>Redirecting to Admin Portal...</p>
+        <button onClick={() => navigate("/admin/dashboard")} className="ed-success-btn" style={{ marginTop: "20px" }}>
+          Go to Admin Portal
         </button>
       </div>
     );
@@ -260,8 +300,6 @@ function Home() {
 
   return (
     <div className="afterdark-home">
-      
-      {/* 1. PUBLIC GUEST VIEW OR LANDING */}
       {!isAuthenticated ? (
         <section className="hero" ref={heroRef}>
           <div className="hero__video-wrap">
@@ -304,9 +342,154 @@ function Home() {
             </div>
           </div>
         </section>
+      ) : profile?.role === "venue_owner" ? (
+        
+        // 2. PERSONALIZED LOGGED-IN PARTNER HUB
+        <div className="home-dashboard">
+          
+          {/* Greeting Header */}
+          <div className="home-greeting">
+            <div className="greeting-text">
+              <span className="greeting-eyebrow">PARTNER PORTAL HUB 🦉</span>
+              <h1 className="greeting-title">Welcome back, <em>{profile?.full_name || "Partner"}!</em></h1>
+            </div>
+            
+            <div className="greeting-meta-badges">
+              {ownerVenue?.is_verified ? (
+                <div className="greeting-badge" style={{ background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.2)", color: "#10b981" }}>
+                  <span>✓ Verified Venue Partner</span>
+                </div>
+              ) : (
+                <div className="greeting-badge" style={{ background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", color: "#f59e0b" }}>
+                  <span>⏳ Verification Pending</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main content split */}
+          <div className="home-split-row">
+            
+            {/* Left Column: Venue Spotlight Card */}
+            <div className="home-col-left">
+              <div className="glass-card" style={{ padding: 0, overflow: "hidden" }}>
+                <div className="vd-cover-frame" style={{ height: "180px", aspectRatio: "auto", borderRadius: 0 }}>
+                  <img 
+                    src={ownerVenue?.images?.[0] || "https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=500"} 
+                    alt={ownerVenue?.name || "My Venue"} 
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+                
+                <div style={{ padding: "24px", textAlign: "left" }}>
+                  <h3 style={{ margin: "0 0 4px 0", fontSize: "1.4rem", color: "white", fontWeight: 800 }}>
+                    {ownerVenue?.name || "No Registered Venue"}
+                  </h3>
+                  <p style={{ margin: "0 0 16px 0", color: "hsl(var(--muted))", fontSize: "0.85rem" }}>
+                    📍 {ownerVenue?.address || "Address not configured"}, {ownerVenue?.city || ""}
+                  </p>
+
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <Link to={ownerVenue ? `/venues/${ownerVenue.id}` : "/venues"} className="vd-btn-outline" style={{ flex: 1, textAlign: "center", textDecoration: "none", fontSize: "0.8rem", padding: "8px 12px" }}>
+                      View Public Page
+                    </Link>
+                    <Link to="/owner/dashboard?tab=venue" className="vd-btn-primary" style={{ flex: 1, textAlign: "center", textDecoration: "none", fontSize: "0.8rem", padding: "8px 12px" }}>
+                      Manage Profile
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Operations Stats Overview */}
+              <div className="glass-card" style={{ marginTop: "24px" }}>
+                <h3 className="glass-card__title">
+                  <HiSparkles style={{ color: "#f59e0b", fontSize: "1.2rem" }} /> Operational Overview
+                </h3>
+                
+                <div className="vd-scorecards-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)", gap: "16px", marginTop: "16px" }}>
+                  <div className="vd-metric-card" style={{ padding: "16px" }}>
+                    <span className="vd-metric-lbl">📅 Published Events</span>
+                    <span className="vd-metric-val" style={{ fontSize: "1.8rem", color: "white" }}>{ownerEventsList.length}</span>
+                  </div>
+                  
+                  <div className="vd-metric-card" style={{ padding: "16px", borderColor: ownerReservationsList.filter(r => r.status === 'pending').length > 0 ? "rgba(245, 158, 11, 0.4)" : "var(--border)" }}>
+                    <span className="vd-metric-lbl">🍽️ Pending Tables</span>
+                    <span className="vd-metric-val" style={{ fontSize: "1.8rem", color: ownerReservationsList.filter(r => r.status === 'pending').length > 0 ? "#f59e0b" : "white" }}>
+                      {ownerReservationsList.filter(r => r.status === 'pending').length}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Quick Shortcuts */}
+            <div className="home-col-right">
+              <div className="glass-card" style={{ height: "100%" }}>
+                <h3 className="glass-card__title">
+                  ⚡ Quick Operations Center
+                </h3>
+                <p style={{ color: "hsl(var(--muted))", fontSize: "0.85rem", marginBottom: "20px", textAlign: "left" }}>
+                  Select a task to jump directly into your partner control panel operations.
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  <Link to="/owner/dashboard?tab=create-event" className="pass-mini-card" style={{ textDecoration: "none", cursor: "pointer", background: "rgba(255, 255, 255, 0.02)", padding: "16px", border: "1px solid var(--border)", borderRadius: "16px" }}>
+                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                      <div style={{ background: "rgba(124, 92, 252, 0.1)", color: "#a78bfa", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                        📅
+                      </div>
+                      <div style={{ textAlign: "left" }}>
+                        <h4 style={{ margin: "0 0 2px 0", color: "white", fontSize: "0.95rem" }}>Publish New Event</h4>
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted))" }}>Configure pass pricing levels and set capacities</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <Link to="/owner/dashboard?tab=events" className="pass-mini-card" style={{ textDecoration: "none", cursor: "pointer", background: "rgba(255, 255, 255, 0.02)", padding: "16px", border: "1px solid var(--border)", borderRadius: "16px" }}>
+                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                      <div style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                        👥
+                      </div>
+                      <div style={{ textAlign: "left" }}>
+                        <h4 style={{ margin: "0 0 2px 0", color: "white", fontSize: "0.95rem" }}>Manage Guestlists</h4>
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted))" }}>Check who has booked passes and review tickets</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <Link to="/owner/dashboard?tab=tables" className="pass-mini-card" style={{ textDecoration: "none", cursor: "pointer", background: "rgba(255, 255, 255, 0.02)", padding: "16px", border: "1px solid var(--border)", borderRadius: "16px" }}>
+                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                      <div style={{ background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                        🍽️
+                      </div>
+                      <div style={{ textAlign: "left" }}>
+                        <h4 style={{ margin: "0 0 2px 0", color: "white", fontSize: "0.95rem" }}>Table Reservations</h4>
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted))" }}>Approve or decline guest table seat requests</span>
+                      </div>
+                    </div>
+                  </Link>
+
+                  <Link to="/owner/dashboard?tab=venue" className="pass-mini-card" style={{ textDecoration: "none", cursor: "pointer", background: "rgba(255, 255, 255, 0.02)", padding: "16px", border: "1px solid var(--border)", borderRadius: "16px" }}>
+                    <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
+                      <div style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                        🏠
+                      </div>
+                      <div style={{ textAlign: "left" }}>
+                        <h4 style={{ margin: "0 0 2px 0", color: "white", fontSize: "0.95rem" }}>Edit Profile & Info</h4>
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted))" }}>Modify timings, pictures, social pages, and contacts</span>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
       ) : (
         
-        // 2. PERSONALIZED LOGGED-IN VIBE HUB
+        // 3. PERSONALIZED LOGGED-IN CUSTOMER VIBE HUB
         <div className="home-dashboard">
           
           {/* Greeting Header */}

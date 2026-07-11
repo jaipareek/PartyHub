@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { HiBuildingStorefront, HiCalendarDays, HiListBullet, HiArrowLeftOnRectangle } from "react-icons/hi2";
+import { HiBuildingStorefront, HiCalendarDays, HiListBullet, HiArrowLeftOnRectangle, HiTicket } from "react-icons/hi2";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import MyVenue from "../components/dashboard/MyVenue";
 import CreateEvent from "../components/dashboard/CreateEvent";
@@ -12,8 +12,19 @@ import "./Dashboard.css";
 function Dashboard() {
   const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("venue");
   const [isVerified, setIsVerified] = useState(true);
+  const [venueId, setVenueId] = useState(null);
+
+  // Tab routing listener
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (tabParam && ["venue", "create-event", "events", "tables"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
 
   // Owner events & guestlist check-in states
   const [ownerEvents, setOwnerEvents] = useState([]);
@@ -23,11 +34,18 @@ function Dashboard() {
   const [fetchingAttendees, setFetchingAttendees] = useState(false);
   const [attendeeSearch, setAttendeeSearch] = useState("");
 
+  // Table reservation states
+  const [reservations, setReservations] = useState([]);
+  const [fetchingReservations, setFetchingReservations] = useState(false);
+
   useEffect(() => {
     if (activeTab === "events" && user) {
       fetchOwnerEvents();
     }
-  }, [activeTab, user]);
+    if (activeTab === "tables" && venueId) {
+      fetchVenueReservations();
+    }
+  }, [activeTab, user, venueId]);
 
   const fetchOwnerEvents = async () => {
     try {
@@ -41,6 +59,41 @@ function Dashboard() {
       toast.error("Could not load your events");
     } finally {
       setFetchingEvents(false);
+    }
+  };
+
+  const fetchVenueReservations = async () => {
+    try {
+      setFetchingReservations(true);
+      const res = await api.get(`/table-reservations/venue/${venueId}`);
+      if (res.data?.success) {
+        setReservations(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load table reservations:", err);
+      toast.error("Could not load table reservations. Please make sure the table exists.");
+    } finally {
+      setFetchingReservations(false);
+    }
+  };
+
+  const handleUpdateReservationStatus = async (reservationId, status) => {
+    const toastId = toast.loading(`Updating status to ${status}...`);
+    try {
+      const res = await api.put(`/table-reservations/${reservationId}/status`, { status });
+      if (res.data?.success) {
+        toast.success(`Reservation ${status}! 🍽️`, { id: toastId });
+        
+        // Update local reservations state
+        setReservations((prev) =>
+          prev.map((r) =>
+            r.id === reservationId ? { ...r, status } : r
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Error updating reservation status:", err);
+      toast.error(err.response?.data?.error || "Failed to update reservation", { id: toastId });
     }
   };
 
@@ -116,6 +169,7 @@ function Dashboard() {
       if (!venue) {
         navigate("/owner/setup");
       } else {
+        setVenueId(venue.id);
         setIsVerified(venue.is_verified);
       }
     };
@@ -130,6 +184,25 @@ function Dashboard() {
     } catch (err) {
       toast.error("Logout failed");
     }
+  };
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-IN", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (timeStr) => {
+    if (!timeStr) return "";
+    const [hours, minutes] = timeStr.split(":");
+    const h = parseInt(hours);
+    const suffix = h >= 12 ? "PM" : "AM";
+    const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${display}:${minutes} ${suffix}`;
   };
 
   if (loading) {
@@ -155,7 +228,7 @@ function Dashboard() {
           <div>
             <h1 style={{ fontSize: "2rem", fontWeight: 800, margin: 0, color: "white" }}>Partner Dashboard</h1>
             <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.95rem" }}>
-              Update venue details, publish events, and manage attendees.
+              Update venue details, publish events, and manage attendees or table bookings.
             </p>
           </div>
           <button 
@@ -192,10 +265,19 @@ function Dashboard() {
             <HiListBullet style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
             My Events
           </button>
+          <button
+            className={`dashboard-tab ${activeTab === "tables" ? "active" : ""}`}
+            onClick={() => setActiveTab("tables")}
+          >
+            <HiTicket style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
+            Table Bookings
+          </button>
         </div>
 
         {activeTab === "venue" && <MyVenue />}
         {activeTab === "create-event" && <CreateEvent />}
+        
+        {/* TAB 3: EVENTS */}
         {activeTab === "events" && (
           <div>
             <h2 style={{ fontSize: "1.5rem", color: "white", marginBottom: "6px", textAlign: "left" }}>My Events</h2>
@@ -234,6 +316,103 @@ function Dashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: TABLE RESERVATIONS */}
+        {activeTab === "tables" && (
+          <div>
+            <h2 style={{ fontSize: "1.5rem", color: "white", marginBottom: "6px", textAlign: "left" }}>Table Bookings</h2>
+            <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem", marginBottom: "28px", textAlign: "left" }}>Manage guest dinner and lunch table reservations for your venue.</p>
+
+            {fetchingReservations ? (
+              <p style={{ color: "white" }}>Loading reservations...</p>
+            ) : reservations.length === 0 ? (
+              <div className="dashboard-placeholder">
+                <h2>No Table Bookings Found</h2>
+                <p>Guests haven't requested any table bookings for your venue yet.</p>
+              </div>
+            ) : (
+              <div className="guestlist-list-wrapper" style={{ maxHeight: "none", overflow: "visible" }}>
+                <table className="guestlist-table">
+                  <thead>
+                    <tr>
+                      <th>Guest Name</th>
+                      <th>Contact Details</th>
+                      <th>Occasion</th>
+                      <th>Seating Area</th>
+                      <th>Date & Time</th>
+                      <th>Guests</th>
+                      <th>Special Notes</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reservations.map((reserve) => (
+                      <tr key={reserve.id}>
+                        <td>
+                          <strong>{reserve.guest?.full_name || "Anonymous"}</strong>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: "0.78rem" }}>
+                            <span>{reserve.guest?.email || "No email"}</span>
+                            <span style={{ display: "block", color: "hsl(var(--muted))" }}>{reserve.guest?.phone || "No phone"}</span>
+                          </div>
+                        </td>
+                        <td style={{ textTransform: "capitalize", fontWeight: 700 }}>{reserve.occasion}</td>
+                        <td style={{ textTransform: "capitalize", fontSize: "0.8rem" }}>{reserve.seating_area?.replace("_", " ")}</td>
+                        <td>
+                          <div style={{ fontSize: "0.82rem" }}>
+                            <strong>{formatDate(reserve.reservation_date)}</strong>
+                            <span style={{ display: "block", color: "hsl(var(--muted))" }}>{formatTime(reserve.reservation_time)}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 800 }}>{reserve.guest_count}</td>
+                        <td style={{ maxWidth: "200px", fontSize: "0.78rem", fontStyle: "italic", whiteSpace: "normal", color: "rgba(255, 255, 255, 0.7)" }}>
+                          {reserve.special_requests || "—"}
+                        </td>
+                        <td>
+                          <span className={`guestlist-badge guestlist-badge--${reserve.status}`}>
+                            {reserve.status}
+                          </span>
+                        </td>
+                        <td>
+                          {reserve.status === "pending" ? (
+                            <div style={{ display: "flex", gap: "6px" }}>
+                              <button
+                                className="guestlist-checkin-btn"
+                                onClick={() => handleUpdateReservationStatus(reserve.id, "confirmed")}
+                                style={{ background: "#10b981" }}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                className="guestlist-checkin-btn"
+                                onClick={() => handleUpdateReservationStatus(reserve.id, "declined")}
+                                style={{ background: "#ef4444" }}
+                              >
+                                Decline
+                              </button>
+                            </div>
+                          ) : reserve.status === "confirmed" ? (
+                            <button
+                              className="guestlist-checkin-btn"
+                              onClick={() => handleUpdateReservationStatus(reserve.id, "cancelled")}
+                              style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border)", color: "white" }}
+                            >
+                              Cancel
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>Resolved</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

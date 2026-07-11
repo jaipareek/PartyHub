@@ -91,6 +91,60 @@ function VenueDetail() {
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Table Reservation states
+  const [reserveModalOpen, setReserveModalOpen] = useState(false);
+  const [reserveDate, setReserveDate] = useState("");
+  const [reserveTime, setReserveTime] = useState("20:00");
+  const [reserveGuests, setReserveGuests] = useState(2);
+  const [reserveArea, setReserveArea] = useState("main_lounge");
+  const [reserveOccasion, setReserveOccasion] = useState("dinner");
+  const [reserveRequests, setReserveRequests] = useState("");
+  const [submittingReservation, setSubmittingReservation] = useState(false);
+
+  const handleReserveSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please sign in to reserve a table!");
+      navigate(`/login?redirect=/venues/${id}`);
+      return;
+    }
+
+    if (!reserveDate || !reserveTime || !reserveGuests || !reserveArea || !reserveOccasion) {
+      toast.error("Please fill in all reservation details");
+      return;
+    }
+
+    try {
+      setSubmittingReservation(true);
+      const res = await api.post("/table-reservations", {
+        venue_id: id,
+        reservation_date: reserveDate,
+        reservation_time: reserveTime + ":00", // Append seconds for Postgres TIME
+        guest_count: reserveGuests,
+        seating_area: reserveArea,
+        occasion: reserveOccasion,
+        special_requests: reserveRequests
+      });
+
+      if (res.data?.success) {
+        toast.success("Table reservation requested! 🍽️ Check your notifications for status updates.");
+        setReserveModalOpen(false);
+        // Reset form
+        setReserveDate("");
+        setReserveTime("20:00");
+        setReserveGuests(2);
+        setReserveArea("main_lounge");
+        setReserveOccasion("dinner");
+        setReserveRequests("");
+      }
+    } catch (err) {
+      console.error("Failed to submit table reservation:", err);
+      toast.error(err.response?.data?.error || "Failed to submit reservation. Please make sure the table exists.");
+    } finally {
+      setSubmittingReservation(false);
+    }
+  };
+
   // ── Fetch venue data & reviews ──
   useEffect(() => {
     const fetchVenueAndReviews = async () => {
@@ -394,6 +448,13 @@ function VenueDetail() {
               View on Map
             </a>
             <button 
+              className="vd-btn-outline"
+              onClick={() => setReserveModalOpen(true)}
+              style={{ borderColor: "#f59e0b", color: "#f59e0b" }}
+            >
+              🍽️ Reserve a Table
+            </button>
+            <button 
               className="vd-btn-primary"
               onClick={() => eventsSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
             >
@@ -646,6 +707,118 @@ function VenueDetail() {
         </div>
 
       </div>
+
+      {/* 5. Table Reservation Modal Portal */}
+      {reserveModalOpen && (
+        <div className="ed-modal-overlay" onClick={() => setReserveModalOpen(false)}>
+          <div className="ed-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="ed-modal-header">
+              <h2>Reserve a Table — {venue.name}</h2>
+              <button className="ed-modal-close" onClick={() => setReserveModalOpen(false)}>&times;</button>
+            </div>
+
+            <form onSubmit={handleReserveSubmit} className="ed-checkout-form">
+              <div className="ed-card-fields">
+                <div className="ed-card-row">
+                  <div className="create-event__field">
+                    <label className="vd-form-lbl">Reservation Date</label>
+                    <input 
+                      type="date" 
+                      value={reserveDate}
+                      onChange={(e) => setReserveDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                      required
+                    />
+                  </div>
+                  <div className="create-event__field">
+                    <label className="vd-form-lbl">Preferred Time</label>
+                    <input 
+                      type="time" 
+                      value={reserveTime}
+                      onChange={(e) => setReserveTime(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="ed-card-row">
+                  <div className="create-event__field">
+                    <label className="vd-form-lbl">Occasion</label>
+                    <select 
+                      value={reserveOccasion}
+                      onChange={(e) => setReserveOccasion(e.target.value)}
+                      style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
+                    >
+                      <option value="dinner">Dinner 🍽️</option>
+                      <option value="lunch">Lunch ☀️</option>
+                      <option value="birthday">Birthday Party 🎂</option>
+                      <option value="date">Date Night 👩‍❤️‍👨</option>
+                      <option value="casual">Casual Drinks 🍻</option>
+                      <option value="business">Business Meetup 🤝</option>
+                      <option value="other">Other Occasion 🌟</option>
+                    </select>
+                  </div>
+                  <div className="create-event__field">
+                    <label className="vd-form-lbl">Seating Area</label>
+                    <select 
+                      value={reserveArea}
+                      onChange={(e) => setReserveArea(e.target.value)}
+                      style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
+                    >
+                      <option value="main_lounge">Main Lounge 🛋️</option>
+                      <option value="rooftop">Rooftop Area 🌃</option>
+                      <option value="vip_booth">VIP Booth 👑</option>
+                      <option value="poolside">Poolside Deck 🌊</option>
+                      <option value="bar_seats">High Bar Seats 🍸</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="create-event__field">
+                  <label className="vd-form-lbl">Number of Guests</label>
+                  <div className="ed-qty-controls" style={{ width: "fit-content", background: "#1a1a24", border: "1px solid var(--border)", padding: "8px 16px", borderRadius: "12px", marginTop: "4px" }}>
+                    <button 
+                      type="button"
+                      onClick={() => setReserveGuests(Math.max(1, reserveGuests - 1))}
+                      disabled={reserveGuests <= 1}
+                    >
+                      -
+                    </button>
+                    <span>{reserveGuests}</span>
+                    <button 
+                      type="button"
+                      onClick={() => setReserveGuests(Math.min(20, reserveGuests + 1))}
+                      disabled={reserveGuests >= 20}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="create-event__field">
+                  <label className="vd-form-lbl">Special Requests / Notes</label>
+                  <textarea 
+                    className="vd-form-textarea"
+                    placeholder="E.g., rooftop view requested, vegetarian menu options, high chair for kids..."
+                    value={reserveRequests}
+                    onChange={(e) => setReserveRequests(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                className="ed-book-btn" 
+                disabled={submittingReservation}
+                style={{ background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)", boxShadow: "0 0 20px rgba(245, 158, 11, 0.2)" }}
+              >
+                {submittingReservation ? "Requesting Table..." : "Confirm Reservation Request"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

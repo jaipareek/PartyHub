@@ -2,7 +2,54 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../lib/api";
 import toast from "react-hot-toast";
-import { HiPencil, HiCheck, HiXMark } from "react-icons/hi2";
+import { 
+  HiPencil, 
+  HiCheck, 
+  HiXMark, 
+  HiBuildingStorefront, 
+  HiMapPin, 
+  HiPhone, 
+  HiEnvelope, 
+  HiGlobeAlt, 
+  HiSparkles,
+  HiClock
+} from "react-icons/hi2";
+
+const CATEGORIES = [
+  { value: "club", label: "Club 🍾" },
+  { value: "bar", label: "Bar 🍸" },
+  { value: "cafe", label: "Café ☕" },
+  { value: "restaurant", label: "Restaurant 🍽️" },
+  { value: "concert_hall", label: "Concert Hall 🎵" },
+  { value: "outdoor", label: "Outdoor Area ⛺" },
+  { value: "other", label: "Other Setup 🌟" },
+];
+
+const AMENITY_ICONS = {
+  "Air Conditioned": "❄️",
+  "AC": "❄️",
+  "Full Bar": "🍸",
+  "VIP Lounge": "👑",
+  "VIP Lounges": "👑",
+  "Live DJ": "🎧",
+  "Live DJ Setup": "🎧",
+  "Dance Floor": "💃",
+  "Large Dance Floor": "💃",
+  "Parking": "🅿️",
+  "Parking Available": "🅿️",
+  "Smoking Zone": "🚬",
+  "Wi-Fi": "📶",
+  "Coat Check": "🧥",
+  "Security": "🛡️",
+  "Food & Beverages": "🍔",
+  "Washrooms": "🚻",
+  "Rooftop": "🌃",
+  "Outdoor Seating": "🪑",
+  "Karaoke": "🎤",
+  "Pool Table": "🎱",
+  "Food Menu": "🍕",
+  "Private Rooms": "🚪",
+};
 
 function MyVenue() {
   const { user } = useAuth();
@@ -43,84 +90,250 @@ function MyVenue() {
       });
       setVenue(res.data.data);
       setEditing(false);
-      toast.success("Venue updated!");
+      toast.success("Venue profile updated! 🏠");
     } catch (err) {
-      toast.error("Failed to update venue");
+      toast.error("Failed to update venue profile");
     }
   };
 
-  if (loading) return <div className="dashboard-placeholder"><p>Loading venue...</p></div>;
-  if (!venue) return <div className="dashboard-placeholder"><p>No venue found.</p></div>;
+  const getCategoryLabel = (val) => {
+    const matched = CATEGORIES.find((c) => c.value === val);
+    return matched ? matched.label : val;
+  };
+
+  if (loading) return <div className="dashboard-placeholder"><div className="venue-detail__loading-spinner" style={{ margin: "0 auto" }} /></div>;
+  if (!venue) return <div className="dashboard-placeholder"><h2>No Venue Found</h2><p>Please register your venue profile.</p></div>;
 
   return (
-    <div className="my-venue">
-      <div className="my-venue__header">
-        <h2>My Venue</h2>
-        {!editing ? (
-          <button className="my-venue__edit-btn" onClick={() => setEditing(true)}>
-            <HiPencil /> Edit
-          </button>
-        ) : (
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button className="my-venue__save-btn" onClick={handleSave}>
-              <HiCheck /> Save
-            </button>
-            <button className="my-venue__cancel-btn" onClick={() => { setEditing(false); setForm(venue); }}>
-              <HiXMark /> Cancel
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Cover image */}
-      {venue.images?.[0] && (
-        <div className="my-venue__cover">
-          <img src={venue.images[0]} alt={venue.name} />
-          {venue.is_verified && <span className="my-venue__badge">✓ Verified</span>}
-        </div>
-      )}
-
-      {/* Details grid */}
-      <div className="my-venue__grid">
-        <Field label="Venue Name" value={form.name} field="name" editing={editing} onChange={(v) => setForm({ ...form, name: v })} />
-        <Field label="Category" value={form.category} field="category" editing={editing} onChange={(v) => setForm({ ...form, category: v })} />
-        <Field label="Description" value={form.description} field="description" editing={editing} onChange={(v) => setForm({ ...form, description: v })} wide />
-        <Field label="Address" value={form.address} field="address" editing={editing} onChange={(v) => setForm({ ...form, address: v })} wide />
-        <Field label="City" value={form.city} field="city" editing={editing} onChange={(v) => setForm({ ...form, city: v })} />
-        <Field label="State" value={form.state} field="state" editing={editing} onChange={(v) => setForm({ ...form, state: v })} />
-        <Field label="Phone" value={form.phone} field="phone" editing={editing} onChange={(v) => setForm({ ...form, phone: v })} />
-        <Field label="Email" value={form.email} field="email" editing={editing} onChange={(v) => setForm({ ...form, email: v })} />
-        <Field label="Website" value={form.website} field="website" editing={editing} onChange={(v) => setForm({ ...form, website: v })} wide />
-      </div>
-
-      {/* Amenities */}
-      {venue.amenities?.length > 0 && (
-        <div className="my-venue__amenities">
-          <h3>Amenities</h3>
-          <div className="my-venue__amenity-tags">
-            {venue.amenities.map((a) => (
-              <span key={a} className="my-venue__amenity-tag">{a}</span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Field({ label, value, editing, onChange, wide }) {
-  return (
-    <div className={`my-venue__field ${wide ? "col-span-2" : ""}`}>
-      <label>{label}</label>
-      {editing ? (
-        <input
-          type="text"
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
+    <div className="my-venue-redesign">
+      
+      {/* Redesigned Cover Banner */}
+      <div className="vd-cover-frame" style={{ height: "260px", marginBottom: "32px", aspectRatio: "auto" }}>
+        <img 
+          src={venue.images?.[0] || "https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=1000"} 
+          alt={venue.name} 
         />
-      ) : (
-        <p>{value || "—"}</p>
-      )}
+        {venue.is_verified && (
+          <span className="vd-location-badge" style={{ background: "rgba(16, 185, 129, 0.9)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+            ✓ Verified Partner
+          </span>
+        )}
+        
+        <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
+          {!editing ? (
+            <button className="vd-btn-primary" onClick={() => setEditing(true)} style={{ background: "rgba(0, 0, 0, 0.65)", borderColor: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+              <HiPencil /> Edit Profile
+            </button>
+          ) : (
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button className="vd-btn-primary" onClick={handleSave} style={{ background: "#10b981", borderColor: "#10b981" }}>
+                <HiCheck /> Save
+              </button>
+              <button className="vd-btn-outline" onClick={() => { setEditing(false); setForm(venue); }} style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+                <HiXMark /> Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Grid Fields & Settings Panels */}
+      <div className="home-split-row">
+        
+        {/* Left Column: Basic Info & Profile Fields */}
+        <div className="home-col-left" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
+          <div className="glass-card">
+            <h3 className="glass-card__title">
+              <HiBuildingStorefront style={{ color: "#7d5cfc" }} /> Basic Information
+            </h3>
+            
+            <div className="my-venue-fields-list">
+              <div className="create-event__field">
+                <label className="vd-form-lbl">Venue Name</label>
+                {editing ? (
+                  <input 
+                    type="text" 
+                    value={form.name || ""} 
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <p className="my-venue-val">{venue.name}</p>
+                )}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px" }}>
+                <label className="vd-form-lbl">Category</label>
+                {editing ? (
+                  <select 
+                    value={form.category || "club"} 
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="my-venue-val" style={{ textTransform: "capitalize" }}>{getCategoryLabel(venue.category)}</p>
+                )}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px" }}>
+                <label className="vd-form-lbl">Description</label>
+                {editing ? (
+                  <textarea 
+                    value={form.description || ""} 
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    rows={4}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px", width: "100%", resize: "none" }}
+                  />
+                ) : (
+                  <p className="my-venue-val" style={{ fontSize: "0.88rem", lineHeight: 1.6, color: "rgba(255,255,255,0.75)" }}>
+                    {venue.description || "No description provided."}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card__title">
+              <HiMapPin style={{ color: "#ef4444" }} /> Location & Address
+            </h3>
+
+            <div className="my-venue-fields-list">
+              <div className="create-event__field">
+                <label className="vd-form-lbl">Full Address</label>
+                {editing ? (
+                  <input 
+                    type="text" 
+                    value={form.address || ""} 
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <p className="my-venue-val">{venue.address}</p>
+                )}
+              </div>
+
+              <div className="ed-card-row" style={{ marginTop: "16px" }}>
+                <div className="create-event__field">
+                  <label className="vd-form-lbl">City</label>
+                  {editing ? (
+                    <input 
+                      type="text" 
+                      value={form.city || ""} 
+                      onChange={(e) => setForm({ ...form, city: e.target.value })}
+                      style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <p className="my-venue-val">{venue.city}</p>
+                  )}
+                </div>
+                <div className="create-event__field">
+                  <label className="vd-form-lbl">State</label>
+                  {editing ? (
+                    <input 
+                      type="text" 
+                      value={form.state || ""} 
+                      onChange={(e) => setForm({ ...form, state: e.target.value })}
+                      style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                    />
+                  ) : (
+                    <p className="my-venue-val">{venue.state || "—"}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Right Column: Contact Details & Amenities */}
+        <div className="home-col-right" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          
+          <div className="glass-card">
+            <h3 className="glass-card__title">
+              <HiPhone style={{ color: "#10b981" }} /> Contact Details
+            </h3>
+
+            <div className="my-venue-fields-list">
+              <div className="create-event__field">
+                <label className="vd-form-lbl">Contact Number</label>
+                {editing ? (
+                  <input 
+                    type="text" 
+                    value={form.phone || ""} 
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <p className="my-venue-val">{venue.phone || "—"}</p>
+                )}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px" }}>
+                <label className="vd-form-lbl">Email Address</label>
+                {editing ? (
+                  <input 
+                    type="email" 
+                    value={form.email || ""} 
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <p className="my-venue-val">{venue.email || "—"}</p>
+                )}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px" }}>
+                <label className="vd-form-lbl">Official Website</label>
+                {editing ? (
+                  <input 
+                    type="text" 
+                    value={form.website || ""} 
+                    onChange={(e) => setForm({ ...form, website: e.target.value })}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px" }}
+                  />
+                ) : (
+                  <p className="my-venue-val">
+                    {venue.website ? (
+                      <a href={venue.website} target="_blank" rel="noreferrer" style={{ color: "#a78bfa" }}>
+                        {venue.website.replace("https://", "").replace("http://", "")}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h3 className="glass-card__title">
+              <HiSparkles style={{ color: "#f59e0b" }} /> Featured Amenities
+            </h3>
+
+            {venue.amenities && venue.amenities.length > 0 ? (
+              <div className="vd-amenities-grid" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+                {venue.amenities.map((a) => (
+                  <span key={a} className="vd-amenity-badge">
+                    <span className="vd-amenity-icon">{AMENITY_ICONS[a] || "✨"}</span> {a}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: "hsl(var(--muted))", fontSize: "0.85rem", margin: 0 }}>No amenities configured.</p>
+            )}
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

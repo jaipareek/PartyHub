@@ -196,3 +196,28 @@ CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events FOR EACH ROW EXE
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON reviews FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER update_squads_updated_at BEFORE UPDATE ON squads FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================
+-- 9. TABLE RESERVATIONS
+-- ============================================
+CREATE TABLE table_reservations (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  venue_id UUID NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+  reservation_date DATE NOT NULL,
+  reservation_time TIME NOT NULL,
+  guest_count INTEGER NOT NULL CHECK (guest_count >= 1),
+  seating_area TEXT NOT NULL CHECK (seating_area IN ('rooftop', 'main_lounge', 'vip_booth', 'poolside', 'bar_seats')),
+  occasion TEXT NOT NULL CHECK (occasion IN ('dinner', 'lunch', 'birthday', 'date', 'business', 'casual', 'other')),
+  special_requests TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'declined', 'cancelled')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_table_reservations_user_id ON table_reservations(user_id);
+CREATE INDEX idx_table_reservations_venue_id ON table_reservations(venue_id);
+CREATE INDEX idx_table_reservations_date ON table_reservations(reservation_date);
+CREATE INDEX idx_table_reservations_status ON table_reservations(status);
+
+CREATE TRIGGER update_table_reservations_updated_at BEFORE UPDATE ON table_reservations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
