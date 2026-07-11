@@ -1,0 +1,169 @@
+/* ============================================
+   🎟️ Gate Check-In Verification View Style
+   ============================================ */
+.gate-checkin-page {
+  min-height: 100vh;
+  background: hsl(240 20% 4%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  color: white;
+}
+
+.gate-checkin-container {
+  width: 100%;
+  max-width: 480px;
+}
+
+.gate-checkin-card {
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all var(--transition-base);
+}
+
+/* ── States Halos ── */
+.gate-checkin-card.success-state {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+}
+
+.gate-checkin-card.warning-state {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+
+.gate-checkin-card.error-state {
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.15);
+}
+
+/* ── Spinner ── */
+.gate-checkin-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-light);
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 24px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.gate-checkin-status-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.success-state .gate-checkin-status-icon {
+  color: #10b981;
+}
+
+.warning-state .gate-checkin-status-icon {
+  color: var(--warning);
+}
+
+.error-state .gate-checkin-status-icon {
+  color: #ef4444;
+}
+
+.gate-checkin-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  color: white;
+}
+
+.gate-checkin-subtitle {
+  color: hsl(var(--muted));
+  font-size: 0.95rem;
+  margin: 0 0 32px 0;
+}
+
+.gate-checkin-code {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: rgba(124, 92, 252, 0.08);
+  padding: 6px 16px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Guest Details List ── */
+.gate-checkin-details {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.gate-checkin-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  gap: 12px;
+}
+
+.gate-checkin-label {
+  color: hsl(var(--muted));
+  font-weight: 500;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.gate-checkin-value {
+  color: white;
+  font-weight: 700;
+  text-align: right;
+  word-break: break-word;
+}
+
+.gate-checkin-value.code-font {
+  font-family: monospace;
+  color: var(--primary-light);
+  font-size: 0.95rem;
+}
+
+/* ── Button ── */
+.gate-checkin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--glass-strong);
+  color: white;
+  border: 1px solid var(--border);
+  padding: 12px 24px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.gate-checkin-btn:hover {
+  background: white;
+  color: black;
+  border-color: white;
+}

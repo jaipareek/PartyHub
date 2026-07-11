@@ -18,6 +18,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import squadRoutes from "./routes/squadRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 // Load environment variables from .env file FIRST
 dotenv.config();
@@ -104,6 +105,9 @@ app.use("/api/reviews", reviewRoutes);
 
 // ✅ Squad routes
 app.use("/api/squads", squadRoutes);
+
+// ✅ Notification routes
+app.use("/api/notifications", notificationRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);

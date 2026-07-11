@@ -21,6 +21,7 @@ import MyBookings from "./pages/MyBookings";
 import SquadDetail from "./pages/SquadDetail";
 import UserProfile from "./pages/UserProfile";
 import AuthCallback from "./pages/AuthCallback";
+import GateCheckIn from "./pages/GateCheckIn";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import "./App.css";
 
@@ -76,6 +77,7 @@ function App() {
           <Route path="/owner/signup" element={<OwnerSignup />} />
           <Route path="/owner/setup" element={<VenueSetup />} />
           <Route path="/owner/dashboard" element={<Dashboard />} />
+          <Route path="/owner/check-in/:code" element={<GateCheckIn />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>

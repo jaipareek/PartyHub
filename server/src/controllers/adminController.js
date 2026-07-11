@@ -62,7 +62,7 @@ export const getPendingStudents = async (req, res) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("student_verification_status", "pending")
+      .in("student_verification_status", ["pending", "approved", "rejected"])
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -101,6 +101,15 @@ export const verifyStudent = async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    await supabase.from("notifications").insert({
+      user_id: profileId,
+      title: isStudent ? "Student Status Approved 🎓" : "Student Verification Rejected ❌",
+      message: isStudent 
+        ? "Congratulations! Your student verification was approved. You can now use student discount deals."
+        : "Your student verification proof was rejected. Please upload clear scans of your Aadhaar and ID.",
+      type: "system",
+    });
 
     res.status(200).json({
       success: true,

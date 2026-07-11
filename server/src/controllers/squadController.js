@@ -86,6 +86,31 @@ export const joinSquad = async (req, res) => {
       throw memberErr;
     }
 
+    // Fetch profile of joining user
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .single();
+
+    // Fetch squad details (to get leader and name)
+    const { data: fullSquad } = await supabase
+      .from("squads")
+      .select("name, leader_id")
+      .eq("id", squadId)
+      .single();
+
+    if (fullSquad && fullSquad.leader_id !== userId) {
+      await supabase.from("notifications").insert({
+        user_id: fullSquad.leader_id,
+        title: "New Squad Member! 👥",
+        message: `${profile?.full_name || "A friend"} joined your squad "${fullSquad.name}".`,
+        type: "squad_invite",
+        related_id: squadId,
+        related_type: "squad",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Welcome to the squad! 🎉",

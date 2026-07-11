@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { HiUser, HiAcademicCap, HiCloudArrowUp, HiCheckCircle } from "react-icons/hi2";
@@ -15,14 +15,19 @@ function UserProfile() {
   const [isStudent, setIsStudent] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Mock file upload states
+  // File upload states
   const [uploadingId, setUploadingId] = useState(false);
   const [idDocName, setIdDocName] = useState("");
+  const [idDocBase64, setIdDocBase64] = useState("");
   
   const [uploadingAadhar, setUploadingAadhar] = useState(false);
   const [aadharDocName, setAadharDocName] = useState("");
+  const [aadharDocBase64, setAadharDocBase64] = useState("");
 
   const [verificationStatus, setVerificationStatus] = useState("not_submitted");
+
+  const idInputRef = useRef(null);
+  const aadharInputRef = useRef(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -39,9 +44,11 @@ function UserProfile() {
       
       if (profile.student_id_url) {
         setIdDocName("student_id_card.png");
+        setIdDocBase64(profile.student_id_url);
       }
       if (profile.aadhar_url) {
         setAadharDocName("aadhar_card.pdf");
+        setAadharDocBase64(profile.aadhar_url);
       }
     }
   }, [user, profile, authLoading, navigate]);
@@ -55,32 +62,49 @@ function UserProfile() {
     setIsStudent(!isStudent);
     if (isStudent) {
       setIdDocName("");
+      setIdDocBase64("");
       setAadharDocName("");
+      setAadharDocBase64("");
     }
   };
 
-  const handleMockUploadId = () => {
-    if (uploadingId) return;
-    setUploadingId(true);
-    toast.loading("Uploading ID card scan...", { id: "uploadId" });
-    
-    setTimeout(() => {
-      setIdDocName("student_id_scan.png");
-      setUploadingId(false);
-      toast.success("Student ID scan uploaded successfully!", { id: "uploadId" });
-    }, 1200);
-  };
+  const handleFileChange = (e, type) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const handleMockUploadAadhar = () => {
-    if (uploadingAadhar) return;
-    setUploadingAadhar(true);
-    toast.loading("Uploading Aadhaar card scan...", { id: "uploadAadhar" });
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be under 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
     
-    setTimeout(() => {
-      setAadharDocName("aadhar_card_scan.pdf");
-      setUploadingAadhar(false);
-      toast.success("Aadhaar card scan uploaded successfully!", { id: "uploadAadhar" });
-    }, 1200);
+    if (type === "id") {
+      setUploadingId(true);
+    } else {
+      setUploadingAadhar(true);
+    }
+
+    reader.onload = (uploadEvent) => {
+      const base64Str = uploadEvent.target.result;
+      if (type === "id") {
+        setIdDocName(file.name);
+        setIdDocBase64(base64Str);
+        setUploadingId(false);
+        toast.success("Student ID attached!");
+      } else {
+        setAadharDocName(file.name);
+        setAadharDocBase64(base64Str);
+        setUploadingAadhar(false);
+        toast.success("Aadhaar document attached!");
+      }
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read file");
+      if (type === "id") setUploadingId(false);
+      else setUploadingAadhar(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -95,8 +119,8 @@ function UserProfile() {
       const res = await api.put("/auth/profile", {
         full_name: fullName,
         college: isStudent ? college : "",
-        student_id_url: isStudent ? `https://supabase.co/storage/id_${user.id}.png` : null,
-        aadhar_url: isStudent ? `https://supabase.co/storage/aadhar_${user.id}.pdf` : null,
+        student_id_url: isStudent ? idDocBase64 : null,
+        aadhar_url: isStudent ? aadharDocBase64 : null,
         submit_verification: isStudent,
         is_student: isStudent ? undefined : false,
       });
@@ -227,9 +251,18 @@ function UserProfile() {
                         )}
                       </div>
                     ) : (
-                      <div className="student-upload" onClick={handleMockUploadId}>
+                      <div className="student-upload" onClick={() => idInputRef.current?.click()}>
                         <HiCloudArrowUp className="student-upload__icon" />
-                        <span className="student-upload__text">Upload Student ID scan</span>
+                        <span className="student-upload__text">
+                          {uploadingId ? "Processing file..." : "Upload Student ID scan"}
+                        </span>
+                        <input
+                          type="file"
+                          ref={idInputRef}
+                          style={{ display: "none" }}
+                          accept="image/*,application/pdf"
+                          onChange={(e) => handleFileChange(e, "id")}
+                        />
                       </div>
                     )}
                   </div>
@@ -253,9 +286,18 @@ function UserProfile() {
                         )}
                       </div>
                     ) : (
-                      <div className="student-upload" onClick={handleMockUploadAadhar}>
+                      <div className="student-upload" onClick={() => aadharInputRef.current?.click()}>
                         <HiCloudArrowUp className="student-upload__icon" />
-                        <span className="student-upload__text">Upload Aadhaar scan / PDF</span>
+                        <span className="student-upload__text">
+                          {uploadingAadhar ? "Processing file..." : "Upload Aadhaar scan / PDF"}
+                        </span>
+                        <input
+                          type="file"
+                          ref={aadharInputRef}
+                          style={{ display: "none" }}
+                          accept="image/*,application/pdf"
+                          onChange={(e) => handleFileChange(e, "aadhar")}
+                        />
                       </div>
                     )}
                   </div>

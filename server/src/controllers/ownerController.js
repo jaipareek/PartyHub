@@ -132,7 +132,21 @@ export const checkInBooking = async (req, res) => {
     }
 
     if (booking.status === "checked_in") {
-      return res.status(400).json({ success: false, error: "Ticket already checked in!" });
+      const { data: fullBooking } = await supabase
+        .from("bookings")
+        .select(`
+          *,
+          user:profiles (id, full_name, email),
+          event:events (id, title, date, start_time)
+        `)
+        .eq("id", booking.id)
+        .single();
+
+      return res.status(400).json({ 
+        success: false, 
+        error: "Ticket already checked in!", 
+        data: fullBooking || booking 
+      });
     }
 
     // 2. Perform check-in status update
@@ -148,10 +162,37 @@ export const checkInBooking = async (req, res) => {
 
     if (updateErr) throw updateErr;
 
+    // Fetch event title for check-in notification
+    const { data: eventDetails } = await supabase
+      .from("events")
+      .select("title")
+      .eq("id", booking.event_id)
+      .single();
+
+    await supabase.from("notifications").insert({
+      user_id: booking.user_id,
+      title: "Checked In at Gate! 🎟️",
+      message: `You have successfully checked in for "${eventDetails?.title || "Event"}" at ${new Date().toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit' })}.`,
+      type: "booking",
+      related_id: booking.id,
+      related_type: "booking",
+    });
+
+    // Fetch enriched booking details to send to the gate scanner page
+    const { data: fullBooking } = await supabase
+      .from("bookings")
+      .select(`
+        *,
+        user:profiles (id, full_name, email),
+        event:events (id, title, date, start_time)
+      `)
+      .eq("id", booking.id)
+      .single();
+
     res.status(200).json({
       success: true,
       message: "Checked in successfully! 🥂",
-      data: updated,
+      data: fullBooking || updated,
     });
   } catch (error) {
     console.error("Check-in error:", error.message);

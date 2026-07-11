@@ -88,7 +88,8 @@ function MyBookings() {
             {bookings.map((booking) => {
               const event = booking.event || {};
               const venue = event.venue || {};
-              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.booking_code}&color=000&bgcolor=fff`;
+              const checkInUrl = `${window.location.origin}/owner/check-in/${booking.booking_code}`;
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(checkInUrl)}&color=000&bgcolor=fff`;
 
               return (
                 <div key={booking.id} className="ticket-stub">

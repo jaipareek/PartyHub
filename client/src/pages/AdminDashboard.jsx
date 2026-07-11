@@ -13,6 +13,8 @@ function AdminDashboard() {
   const [pendingStudents, setPendingStudents] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState("");
 
   useEffect(() => {
     if (loading) return;
@@ -73,7 +75,7 @@ function AdminDashboard() {
   };
 
   const handleVerifyStudent = async (profileId, status) => {
-    const toastId = toast.loading(status === "approved" ? "Approving student..." : "Rejecting request...");
+    const toastId = toast.loading(status === "approved" ? "Approving student..." : "Updating status...");
     
     try {
       const res = await api.put(`/admin/students/${profileId}/verify`, {
@@ -81,9 +83,11 @@ function AdminDashboard() {
       });
 
       if (res.data?.success) {
-        toast.success(status === "approved" ? "Student approved successfully! 🎓" : "Verification request rejected.", { id: toastId });
-        // Update local state
-        setPendingStudents((prev) => prev.filter((s) => s.id !== profileId));
+        toast.success(status === "approved" ? "Student approved successfully! 🎓" : "Student status rejected/revoked.", { id: toastId });
+        // Update local status inline
+        setPendingStudents((prev) =>
+          prev.map((s) => (s.id === profileId ? { ...s, student_verification_status: status } : s))
+        );
       }
     } catch (err) {
       console.error("Student verification failed:", err);
@@ -146,7 +150,37 @@ function AdminDashboard() {
             <div className="admin-dashboard__grid">
               {pendingStudents.map((student) => (
                 <div key={student.id} className="admin-card">
-                  <h3 className="admin-card__title">{student.full_name}</h3>
+                  <h3 className="admin-card__title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: "8px" }}>
+                    <span>{student.full_name}</span>
+                    <span style={{ 
+                      fontSize: "0.68rem", 
+                      fontWeight: 700, 
+                      textTransform: "uppercase", 
+                      borderRadius: "6px", 
+                      padding: "4px 8px",
+                      background: student.student_verification_status === "approved" 
+                        ? "rgba(16, 185, 129, 0.12)" 
+                        : student.student_verification_status === "rejected" 
+                        ? "rgba(239, 68, 68, 0.12)" 
+                        : "rgba(245, 158, 11, 0.12)",
+                      color: student.student_verification_status === "approved" 
+                        ? "#10b981" 
+                        : student.student_verification_status === "rejected" 
+                        ? "#ef4444" 
+                        : "var(--warning)",
+                      border: student.student_verification_status === "approved" 
+                        ? "1px solid rgba(16, 185, 129, 0.2)" 
+                        : student.student_verification_status === "rejected" 
+                        ? "1px solid rgba(239, 68, 68, 0.2)" 
+                        : "1px solid rgba(245, 158, 11, 0.2)"
+                    }}>
+                      {student.student_verification_status === "approved" 
+                        ? "Approved" 
+                        : student.student_verification_status === "rejected" 
+                        ? "Rejected" 
+                        : "Pending"}
+                    </span>
+                  </h3>
                   
                   <div className="admin-card__info-group">
                     <div className="admin-card__info-item">
@@ -163,9 +197,16 @@ function AdminDashboard() {
                       <span className="admin-card__info-label">Student ID Proof</span>
                       <span className="admin-card__info-val">
                         {student.student_id_url ? (
-                          <a href={student.student_id_url} target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)", textDecoration: "underline" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewUrl(student.student_id_url);
+                              setPreviewTitle(`${student.full_name}'s Student ID`);
+                            }}
+                            style={{ background: "none", border: "none", color: "var(--primary-light)", textDecoration: "underline", cursor: "pointer", padding: 0, fontWeight: 600, fontSize: "inherit" }}
+                          >
                             View ID Card Scan ↗
-                          </a>
+                          </button>
                         ) : "None provided"}
                       </span>
                     </div>
@@ -174,29 +215,56 @@ function AdminDashboard() {
                       <span className="admin-card__info-label">Aadhaar Proof</span>
                       <span className="admin-card__info-val">
                         {student.aadhar_url ? (
-                          <a href={student.aadhar_url} target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)", textDecoration: "underline" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewUrl(student.aadhar_url);
+                              setPreviewTitle(`${student.full_name}'s Aadhaar Document`);
+                            }}
+                            style={{ background: "none", border: "none", color: "var(--primary-light)", textDecoration: "underline", cursor: "pointer", padding: 0, fontWeight: 600, fontSize: "inherit" }}
+                          >
                             View Aadhaar Document ↗
-                          </a>
+                          </button>
                         ) : "None provided"}
                       </span>
                     </div>
                   </div>
 
                   <div className="admin-card__actions" style={{ gap: "10px", marginTop: "20px" }}>
-                    <button
-                      className="admin-btn admin-btn--approve"
-                      style={{ flex: 1 }}
-                      onClick={() => handleVerifyStudent(student.id, "approved")}
-                    >
-                      Approve Student
-                    </button>
-                    <button
-                      className="admin-btn admin-btn--revoke"
-                      style={{ flex: 1 }}
-                      onClick={() => handleVerifyStudent(student.id, "rejected")}
-                    >
-                      Reject Request
-                    </button>
+                    {student.student_verification_status === "approved" ? (
+                      <button
+                        className="admin-btn admin-btn--revoke"
+                        style={{ flex: 1 }}
+                        onClick={() => handleVerifyStudent(student.id, "rejected")}
+                      >
+                        Revoke Approval
+                      </button>
+                    ) : student.student_verification_status === "rejected" ? (
+                      <button
+                        className="admin-btn admin-btn--approve"
+                        style={{ flex: 1 }}
+                        onClick={() => handleVerifyStudent(student.id, "approved")}
+                      >
+                        Approve Student
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          className="admin-btn admin-btn--approve"
+                          style={{ flex: 1 }}
+                          onClick={() => handleVerifyStudent(student.id, "approved")}
+                        >
+                          Approve Student
+                        </button>
+                        <button
+                          className="admin-btn admin-btn--revoke"
+                          style={{ flex: 1 }}
+                          onClick={() => handleVerifyStudent(student.id, "rejected")}
+                        >
+                          Reject Request
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -270,6 +338,44 @@ function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Glassmorphic Document Preview Modal */}
+      {previewUrl && (
+        <div 
+          className="admin-preview-modal" 
+          onClick={() => setPreviewUrl(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: "20px" }}
+        >
+          <div 
+            className="admin-preview-modal__content" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#0d0d12", border: "1px solid var(--border)", borderRadius: "16px", padding: "24px", maxWidth: "600px", width: "100%", boxShadow: "0 10px 30px rgba(0,0,0,0.5)", position: "relative" }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px" }}>
+              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "white" }}>{previewTitle}</h3>
+              <button 
+                onClick={() => setPreviewUrl(null)}
+                style={{ background: "none", border: "none", color: "hsl(var(--muted))", fontSize: "1.5rem", cursor: "pointer", transition: "color 0.2s" }}
+                onMouseEnter={(e) => e.target.style.color = "white"}
+                onMouseLeave={(e) => e.target.style.color = "hsl(var(--muted))"}
+              >
+                &times;
+              </button>
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "200px" }}>
+              {previewUrl.startsWith("data:application/pdf") ? (
+                <iframe src={previewUrl} title="Document Preview" width="100%" height="450px" style={{ border: "none", borderRadius: "8px" }} />
+              ) : (
+                <img 
+                  src={previewUrl} 
+                  alt="Document Preview" 
+                  style={{ maxWidth: "100%", maxHeight: "60vh", objectFit: "contain", borderRadius: "8px" }} 
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

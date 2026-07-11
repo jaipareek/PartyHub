@@ -138,51 +138,10 @@ function Dashboard() {
 
   return (
     <div className="dashboard-page">
-      {/* Sidebar */}
-      <aside className="dashboard-sidebar">
-        <div className="dashboard-sidebar__brand">
-          <span className="dashboard-sidebar__logo">AD</span>
-          <span className="dashboard-sidebar__brand-text">AfterDark Owner</span>
-        </div>
-
-        <nav className="dashboard-sidebar__nav">
-          <button
-            className={`dashboard-sidebar__nav-item ${activeTab === "venue" ? "active" : ""}`}
-            onClick={() => setActiveTab("venue")}
-          >
-            <HiBuildingStorefront />
-            <span>My Venue</span>
-          </button>
-
-          <button
-            className={`dashboard-sidebar__nav-item ${activeTab === "create-event" ? "active" : ""}`}
-            onClick={() => setActiveTab("create-event")}
-          >
-            <HiCalendarDays />
-            <span>Create Event</span>
-          </button>
-
-          <button
-            className={`dashboard-sidebar__nav-item ${activeTab === "events" ? "active" : ""}`}
-            onClick={() => setActiveTab("events")}
-          >
-            <HiListBullet />
-            <span>My Events</span>
-          </button>
-        </nav>
-
-        <div className="dashboard-sidebar__footer">
-          <button className="dashboard-sidebar__logout" onClick={handleLogout}>
-            <HiArrowLeftOnRectangle />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </aside>
-
       {/* Main Content */}
       <main className="dashboard-main">
         {!isVerified && (
-          <div className="venue-warning-banner">
+          <div className="venue-warning-banner" style={{ marginBottom: "28px" }}>
             <div className="venue-warning-banner__icon">⚠️</div>
             <div className="venue-warning-banner__content">
               <h3>Pending Verification</h3>
@@ -190,6 +149,51 @@ function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* Dashboard Title & Tabs Navigation Header */}
+        <header style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+          <div>
+            <h1 style={{ fontSize: "2rem", fontWeight: 800, margin: 0, color: "white" }}>Partner Dashboard</h1>
+            <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.95rem" }}>
+              Update venue details, publish events, and manage attendees.
+            </p>
+          </div>
+          <button 
+            onClick={handleLogout} 
+            className="dashboard-logout-btn"
+          >
+            <HiArrowLeftOnRectangle style={{ fontSize: "1.1rem" }} /> Sign Out
+          </button>
+        </header>
+
+        {/* Tabs Bar */}
+        <div className="dashboard-tabs">
+          <button
+            className={`dashboard-tab ${activeTab === "venue" ? "active" : ""}`}
+            onClick={() => setActiveTab("venue")}
+          >
+            <HiBuildingStorefront style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
+            My Venue
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === "create-event" ? "active" : ""}`}
+            onClick={() => setActiveTab("create-event")}
+          >
+            <HiCalendarDays style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
+            Create Event
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === "events" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("events");
+              setSelectedEvent(null);
+            }}
+          >
+            <HiListBullet style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
+            My Events
+          </button>
+        </div>
+
         {activeTab === "venue" && <MyVenue />}
         {activeTab === "create-event" && <CreateEvent />}
         {activeTab === "events" && (
