@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -10,16 +10,16 @@ import {
   HiShare,
   HiFire,
   HiArrowTopRightOnSquare,
+  HiUsers,
+  HiUserPlus,
+  HiHeart,
+  HiSparkles
 } from "react-icons/hi2";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import EventCard from "../components/ui/EventCard";
 import toast from "react-hot-toast";
 import "./EventDetail.css";
-
-// 🧠 LEARN: useParams() hook
-// React Router gives us the :id from the URL "/events/:id"
-// So if the URL is /events/abc-123, useParams() returns { id: "abc-123" }
 
 function EventDetail() {
   const { id } = useParams();
@@ -30,6 +30,7 @@ function EventDetail() {
   const [relatedEvents, setRelatedEvents] = useState([]);
   const [selectedTier, setSelectedTier] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // Booking states
   const [quantity, setQuantity] = useState(1);
@@ -87,11 +88,10 @@ function EventDetail() {
   const handleBookClick = () => {
     if (!user) {
       toast.error("Please sign in to book event tickets!");
-      navigate("/login");
+      navigate(`/login?redirect=/events/${id}`);
       return;
     }
     
-    // Check if event has available spots
     if (event.booked_count + quantity > event.total_capacity) {
       toast.error("Not enough spots left for this quantity!");
       return;
@@ -118,7 +118,6 @@ function EventDetail() {
       if (res.data?.success) {
         toast.success("Booking confirmed! 🎟️");
         setBookingResult(res.data.data.booking_code);
-        // Update capacity counter in page state
         setEvent((prev) => ({
           ...prev,
           booked_count: (prev.booked_count || 0) + quantity,
@@ -140,19 +139,18 @@ function EventDetail() {
         const res = await api.get(`/events/${id}`);
         setEvent(res.data.data);
 
-        // Fetch related events from the same venue
+        // Fetch related events
         if (res.data.data.venue_id) {
           const relRes = await api.get("/events/trending");
-          // Filter out current event and show others from same venue first
           const related = relRes.data.data
             .filter((e) => e.id !== id)
-            .slice(0, 4);
+            .slice(0, 3);
           setRelatedEvents(related);
         }
       } catch (err) {
         console.error("Failed to fetch event:", err);
         toast.error("Event not found");
-        navigate("/");
+        navigate("/events");
       } finally {
         setLoading(false);
       }
@@ -163,7 +161,6 @@ function EventDetail() {
     window.scrollTo(0, 0);
   }, [id, navigate]);
 
-  // ── Helper functions ──
   const formatTime = (timeStr) => {
     if (!timeStr) return "";
     const [hours, minutes] = timeStr.split(":");
@@ -177,13 +174,6 @@ function EventDetail() {
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    if (d.toDateString() === today.toDateString()) return "Today";
-    if (d.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-
     return d.toLocaleDateString("en-IN", {
       weekday: "long",
       month: "long",
@@ -206,11 +196,11 @@ function EventDetail() {
 
   const getVibeLevel = (booked, total) => {
     const pct = Math.round((booked / total) * 100);
-    if (pct >= 75)
-      return { label: "🔴 Packed", color: "var(--meter-packed)", pct };
-    if (pct >= 40)
-      return { label: "🟡 Moderate", color: "var(--meter-moderate)", pct };
-    return { label: "🟢 Chill", color: "var(--meter-chill)", pct };
+    if (pct >= 80)
+      return { label: "Packed 🔥", color: "#ef4444", pct };
+    if (pct >= 45)
+      return { label: "Filling Fast ⚡", color: "#f59e0b", pct };
+    return { label: "Spots Open ✨", color: "#10b981", pct };
   };
 
   const handleShare = async () => {
@@ -223,7 +213,7 @@ function EventDetail() {
           url,
         });
       } catch {
-        // User cancelled — do nothing
+        // Cancelled
       }
     } else {
       await navigator.clipboard.writeText(url);
@@ -231,16 +221,10 @@ function EventDetail() {
     }
   };
 
-  // ── Loading State ──
   if (loading) {
     return (
-      <div className="event-detail event-detail--loading">
-        <div style={{ textAlign: "center" }}>
-          <div
-            className="skeleton ed-skeleton-hero"
-            style={{ width: "100vw", borderRadius: 0 }}
-          />
-        </div>
+      <div className="venue-detail__loading">
+        <div className="venue-detail__loading-spinner" />
       </div>
     );
   }
@@ -249,452 +233,429 @@ function EventDetail() {
 
   const vibe = getVibeLevel(event.booked_count, event.total_capacity);
   const spotsLeft = event.total_capacity - event.booked_count;
-  const lowestPrice = event.pricing
+  const venue = event.venues || {};
+
+  // Build Google Maps link
+  const mapsUrl =
+    venue.latitude && venue.longitude
+      ? `https://www.google.com/maps?q=${venue.latitude},${venue.longitude}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          (venue.address || "") + ", " + (venue.city || "")
+        )}`;
+
+  // Find lowest price
+  const lowestPrice = event.pricing && event.pricing.length > 0
     ? Math.min(...event.pricing.map((p) => p.price))
     : 0;
 
+  // Active pricing tier calculation
+  const currentTierPrice = event.pricing && event.pricing[selectedTier]
+    ? event.pricing[selectedTier].price
+    : 0;
+  
+  // Student discount calculations
+  const isEligibleForStudentDiscount = profile?.is_student && event.is_student_deal;
+  const baseTotal = currentTierPrice * quantity;
+  const studentDiscountAmount = isEligibleForStudentDiscount
+    ? Math.round(baseTotal * (event.student_discount_percent / 100))
+    : 0;
+  const finalPrice = baseTotal - studentDiscountAmount;
+
   return (
-    <div className="event-detail">
-      {/* ═══════════════════════════
-         HERO SECTION
-       ═══════════════════════════ */}
-      <motion.section
-        className="ed-hero"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
-        {/* Back button */}
+    <div className="ed-redesign-page">
+      <div className="ed-redesign-container">
+        
+        {/* Back navigation */}
         <button className="ed-back-btn" onClick={() => navigate(-1)}>
-          <HiArrowLeft /> Back
+          <HiArrowLeft /> Back to Events
         </button>
 
-        <img
-          src={event.poster_url}
-          alt={event.title}
-          className="ed-hero__image"
-        />
-        <div className="ed-hero__overlay" />
-
-        {/* Badges */}
-        <div className="ed-hero__badges">
-          <span className="ed-hero__type-badge">
-            {formatType(event.event_type)}
-          </span>
-          {event.is_student_deal && (
-            <span className="ed-hero__student-badge">
-              🎓 {event.student_discount_percent}% Student Deal
-            </span>
-          )}
-        </div>
-
-        {/* Title + Meta */}
-        <div className="ed-hero__content">
-          <h1 className="ed-hero__title">{event.title}</h1>
-          <div className="ed-hero__meta">
-            {event.venues && (
-              <span className="ed-hero__meta-pill">
-                <HiMapPin />
-                {event.venues.name}, {event.venues.city}
-              </span>
-            )}
-            <span className="ed-hero__meta-pill">
-              <HiCalendar />
-              {formatDate(event.date)}
-            </span>
-            <span className="ed-hero__meta-pill">
-              <HiClock />
-              {formatTime(event.start_time)} — {formatTime(event.end_time)}
-            </span>
-          </div>
-        </div>
-      </motion.section>
-
-      {/* ═══════════════════════════
-         MAIN CONTENT (2-col grid)
-       ═══════════════════════════ */}
-      <div className="ed-content">
-        {/* ── Left Column ── */}
-        <motion.div
-          className="ed-left"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          {/* About */}
-          <div className="ed-about">
-            <p className="ed-about__label">About this event</p>
-            <p className="ed-about__text">{event.description}</p>
-          </div>
-
-          {/* Tags */}
-          {event.tags && event.tags.length > 0 && (
-            <div className="ed-tags">
-              {event.tags.map((tag, i) => (
-                <span key={i} className="ed-tag">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Related Events */}
-          {relatedEvents.length > 0 && (
-            <div className="ed-related">
-              <p className="ed-related__label">More events you'll love</p>
-              <div className="ed-related__grid">
-                {relatedEvents.map((e) => (
-                  <EventCard key={e.id} event={e} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Squads Coordinator Section */}
-          <div className="ed-squads-section" style={{ marginTop: "32px", borderTop: "1px solid var(--border)", paddingTop: "32px", textAlign: "left" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <p className="ed-about__label" style={{ margin: 0 }}>👥 Event Squads</p>
-              {user && (
-                <button
-                  type="button"
-                  className="ed-squads__create-toggle-btn"
-                  onClick={() => setShowCreateSquad(!showCreateSquad)}
-                >
-                  {showCreateSquad ? "Cancel" : "+ Launch a Squad"}
-                </button>
-              )}
-            </div>
-
-            {showCreateSquad && (
-              <form onSubmit={handleCreateSquad} className="ed-squads__create-form">
-                <input
-                  type="text"
-                  placeholder="Squad Name (e.g. Rave Crew, Friday Night out)..."
-                  value={squadName}
-                  onChange={(e) => setSquadName(e.target.value)}
-                  required
-                />
-                <button type="submit" className="ed-squads__submit-btn">
-                  Create Squad
-                </button>
-              </form>
-            )}
-
-            {fetchingSquads ? (
-              <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem" }}>Loading squads...</p>
-            ) : squads.length === 0 ? (
-              <div className="ed-squads__empty">
-                <p>No active squads for this event yet. Launch one to coordinate with your friends!</p>
-              </div>
-            ) : (
-              <div className="ed-squads-list">
-                {squads.map((squad) => (
-                  <div key={squad.id} className="ed-squad-row">
-                    <div className="ed-squad-row__info">
-                      <h4 className="ed-squad-row__name">{squad.name}</h4>
-                      <span className="ed-squad-row__meta">
-                        Host: {squad.leader_name} · {squad.member_count} member{squad.member_count !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <Link to={`/squads/${squad.id}`} className="ed-squad-row__join-btn" style={{ textDecoration: "none" }}>
-                      View Crew
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* ── Right Column ── */}
-        <motion.div
-          className="ed-right"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.5 }}
-        >
-          {/* Pricing Tiers */}
-          {event.pricing && event.pricing.length > 0 && (
-            <div className="ed-pricing">
-              <p className="ed-pricing__label">Select your pass</p>
-              <div className="ed-pricing__tiers">
-                {event.pricing.map((tier, i) => (
-                  <div
-                    key={i}
-                    className={`ed-pricing__tier ${
-                      selectedTier === i ? "ed-pricing__tier--selected" : ""
-                    }`}
-                    onClick={() => {
-                      setSelectedTier(i);
-                      setQuantity(1); // Reset quantity when changing tiers
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <div className="ed-pricing__tier-radio" />
-                      <div className="ed-pricing__tier-info">
-                        <span className="ed-pricing__tier-label">
-                          {tier.label}
-                        </span>
-                        <span className="ed-pricing__tier-type">
-                          {tier.type}
-                        </span>
-                      </div>
-                    </div>
-                    <span className="ed-pricing__tier-price">₹{tier.price}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quantity selector */}
-              <div className="ed-pricing__qty-container">
-                <span className="ed-pricing__qty-label">Quantity</span>
-                <div className="ed-pricing__qty-controls">
-                  <button
-                    type="button"
-                    className="ed-pricing__qty-btn"
-                    disabled={quantity <= 1}
-                    onClick={() => setQuantity((q) => q - 1)}
-                  >
-                    -
-                  </button>
-                  <span className="ed-pricing__qty-val">{quantity}</span>
-                  <button
-                    type="button"
-                    className="ed-pricing__qty-btn"
-                    disabled={quantity >= 5}
-                    onClick={() => setQuantity((q) => q + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              <button className="ed-pricing__book-btn" onClick={handleBookClick}>
-                <HiTicket />
-                Book {quantity} Pass{quantity > 1 ? "es" : ""} — ₹{
-                  (profile?.is_student && event.is_student_deal)
-                    ? Math.round((event.pricing[selectedTier]?.price || 0) * quantity * (1 - (event.student_discount_percent || 0) / 100))
-                    : ((event.pricing[selectedTier]?.price || 0) * quantity)
-                }
-              </button>
-            </div>
-          )}
-
-          {/* Party Meter™ */}
-          <div className="ed-meter">
-            <p className="ed-meter__label">Party Meter™</p>
-            <div className="ed-meter__status">
-              <span className="ed-meter__vibe" style={{ color: vibe.color }}>
-                {vibe.label}
-              </span>
-              <span className="ed-meter__spots">
-                {spotsLeft} spots left
-              </span>
-            </div>
-            <div className="ed-meter__bar">
-              <div
-                className="ed-meter__bar-fill"
-                style={{
-                  width: `${vibe.pct}%`,
-                  background: vibe.color,
-                }}
+        {/* 1. Main Split Grid (Poster & Booking Widget) */}
+        <div className="ed-main-grid">
+          
+          {/* Left Column: Cover Poster image frame */}
+          <div className="ed-poster-col">
+            <div className="ed-poster-frame">
+              <img 
+                src={event.poster_url || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800"} 
+                alt={event.title} 
               />
+              <button 
+                className={`ed-favorite-btn ${isFavorited ? "active" : ""}`}
+                onClick={() => {
+                  setIsFavorited(!isFavorited);
+                  toast.success(isFavorited ? "Removed from Favorites" : "Saved to Favorites! 💜");
+                }}
+              >
+                <HiHeart />
+              </button>
+              <div className="ed-type-badge">
+                {formatType(event.event_type)}
+              </div>
+              <div className="ed-location-badge">
+                <HiMapPin /> {venue.name || "Secret Venue"}
+              </div>
             </div>
-            <p className="ed-meter__percentage">
-              {vibe.pct}% filled · {event.booked_count}/{event.total_capacity}{" "}
-              booked
-            </p>
           </div>
 
-          {/* Venue Info Card */}
-          {event.venues && (
-            <div className="ed-venue">
-              {event.venues.images && event.venues.images.length > 0 && (
-                <img
-                  src={event.venues.images[0]}
-                  alt={event.venues.name}
-                  className="ed-venue__image"
-                />
-              )}
-              <div className="ed-venue__info">
-                <Link to={`/venues/${event.venues.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <h3 className="ed-venue__name" style={{ cursor: "pointer" }}>{event.venues.name}</h3>
-                </Link>
-                <span className="ed-venue__category">
-                  {event.venues.category}
-                </span>
-                <div className="ed-venue__address">
-                  <HiMapPin />
-                  <span>
-                    {event.venues.address}, {event.venues.city}
-                    {event.venues.state ? `, ${event.venues.state}` : ""}
+          {/* Right Column: Title, metadata, and booking selector */}
+          <div className="ed-booking-col">
+            <div className="ed-booking-card">
+              
+              <div className="ed-title-row">
+                <h1 className="ed-title">{event.title}</h1>
+                <button className="ed-share-btn" onClick={handleShare} title="Share Link">
+                  <HiShare />
+                </button>
+              </div>
+
+              {/* Badges */}
+              <div className="ed-badge-row">
+                {event.is_student_deal && (
+                  <span className="ed-student-badge">
+                    🎓 {event.student_discount_percent}% Student Deal
                   </span>
+                )}
+                {spotsLeft <= 15 && spotsLeft > 0 && (
+                  <span className="ed-urgent-badge">
+                    ⚠️ Only {spotsLeft} passes left!
+                  </span>
+                )}
+              </div>
+
+              {/* Quick Meta */}
+              <div className="ed-meta-group">
+                <div className="ed-meta-item">
+                  <span className="ed-meta-lbl">Date</span>
+                  <span className="ed-meta-val">📅 {formatDate(event.date)}</span>
                 </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    `${event.venues.name} ${event.venues.address} ${event.venues.city}`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ed-venue__map-btn"
+                <div className="ed-meta-item">
+                  <span className="ed-meta-lbl">Timings</span>
+                  <span className="ed-meta-val">🕒 {formatTime(event.start_time)} - {formatTime(event.end_time)}</span>
+                </div>
+                <div className="ed-meta-item">
+                  <span className="ed-meta-lbl">Location</span>
+                  <span className="ed-meta-val">📍 {venue.city || "Bangalore"}</span>
+                </div>
+              </div>
+
+              {/* Pass Selector widget */}
+              <div className="ed-pass-box">
+                <h3 className="ed-pass-box__title">Select your pass</h3>
+                
+                {event.pricing && event.pricing.length > 0 ? (
+                  <div className="ed-pass-list">
+                    {event.pricing.map((tier, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`ed-pass-tile ${selectedTier === idx ? "active" : ""}`}
+                        onClick={() => setSelectedTier(idx)}
+                      >
+                        <div className="ed-pass-tile__radio">
+                          <div className="ed-pass-tile__dot" />
+                        </div>
+                        <div className="ed-pass-tile__info">
+                          <span className="ed-pass-tile__name">{tier.type}</span>
+                          <span className="ed-pass-tile__desc">Access pass tier details</span>
+                        </div>
+                        <span className="ed-pass-tile__price">₹{tier.price}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem" }}>No passes available</p>
+                )}
+
+                {/* Quantity controller */}
+                <div className="ed-qty-row">
+                  <span className="ed-qty-lbl">Quantity</span>
+                  <div className="ed-qty-controls">
+                    <button 
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      disabled={quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span>{quantity}</span>
+                    <button 
+                      onClick={() => setQuantity(Math.min(5, quantity + 1))}
+                      disabled={quantity >= 5}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Checkout pricing details */}
+                {isEligibleForStudentDiscount && (
+                  <div className="ed-discount-summary">
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "hsl(var(--muted))", marginBottom: "4px" }}>
+                      <span>Subtotal</span>
+                      <span>₹{baseTotal}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", color: "#10b981", fontWeight: 700 }}>
+                      <span>🎓 Student Discount (-{event.student_discount_percent}%)</span>
+                      <span>-₹{studentDiscountAmount}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit button */}
+                <button 
+                  className="ed-book-btn" 
+                  onClick={handleBookClick}
+                  disabled={spotsLeft <= 0}
                 >
-                  <HiArrowTopRightOnSquare />
-                  View on Maps
+                  <HiTicket style={{ fontSize: "1.2rem" }} /> 
+                  {spotsLeft <= 0 
+                    ? "Sold Out ❌" 
+                    : `Book ${quantity} Pass${quantity > 1 ? "es" : ""} — ₹${finalPrice}`}
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        {/* 2. Detailed Grid (Description, Squads, Vibe Meter) */}
+        <div className="ed-split-grid">
+          
+          {/* Left Block: Description & Squads */}
+          <div className="ed-split-left">
+            
+            <div className="ed-card">
+              <h2 className="ed-section-title">About this event</h2>
+              <p className="ed-about-text">
+                {event.description || "Get ready for an epic night filled with the best beats, amazing drinks, and an electric atmosphere. Bring your crew and let's make it a night to remember!"}
+              </p>
+
+              {event.tags && event.tags.length > 0 && (
+                <div className="ed-tags-wrapper">
+                  {event.tags.map((tag, idx) => (
+                    <span key={idx} className="ed-tag-badge">#{tag}</span>
+                  ))}
+                </div>
+              )}
+
+              {/* Squads widget */}
+              <div className="ed-squads-box">
+                <div className="ed-squads-header">
+                  <div>
+                    <h3 className="ed-sub-title" style={{ marginBottom: "2px" }}>Squad Coordinator</h3>
+                    <p style={{ color: "hsl(var(--muted))", fontSize: "0.8rem", margin: 0 }}>Join a crew or start your own to party together!</p>
+                  </div>
+                  <button className="ed-launch-squad-btn" onClick={() => setShowCreateSquad(!showCreateSquad)}>
+                    <HiUsers /> Launch a Crew
+                  </button>
+                </div>
+
+                {showCreateSquad && (
+                  <form onSubmit={handleCreateSquad} className="ed-squad-form">
+                    <input 
+                      type="text" 
+                      placeholder="Enter crew name..."
+                      value={squadName}
+                      onChange={(e) => setSquadName(e.target.value)}
+                    />
+                    <button type="submit">Create</button>
+                  </form>
+                )}
+
+                {fetchingSquads ? (
+                  <p style={{ color: "hsl(var(--muted))", fontSize: "0.85rem" }}>Loading squads...</p>
+                ) : squads.length === 0 ? (
+                  <div className="ed-squads-empty">
+                    <p>No active squads for this event yet. Be the first to start a crew!</p>
+                  </div>
+                ) : (
+                  <div className="ed-squads-list">
+                    {squads.map((squad) => (
+                      <div key={squad.id} className="ed-squad-strip">
+                        <div>
+                          <h4 className="ed-squad-name">{squad.name}</h4>
+                          <span className="ed-squad-host">Hosted by {squad.host?.full_name || "Friend"}</span>
+                        </div>
+                        <Link to={`/squads/${squad.id}`} className="ed-squad-join-btn">
+                          <HiUserPlus /> View & Join
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Right Block: Vibe Meter & Venue Spotlight */}
+          <div className="ed-split-right">
+            
+            {/* Vibe Meter */}
+            <div className="ed-card">
+              <h2 className="ed-section-title">Party Meter™</h2>
+              
+              <div className="ed-vibemeter">
+                <div className="ed-vibemeter__header">
+                  <span className="ed-vibemeter__lbl" style={{ color: vibe.color }}>
+                    {vibe.label}
+                  </span>
+                  <span className="ed-vibemeter__pct">{vibe.pct}% Capacity</span>
+                </div>
+                
+                <div className="ed-vibemeter__track">
+                  <div 
+                    className="ed-vibemeter__fill" 
+                    style={{ width: `${vibe.pct}%`, background: vibe.color }}
+                  />
+                </div>
+
+                <div className="ed-vibemeter__footer">
+                  <span>Spots Taken: <strong>{event.booked_count}</strong></span>
+                  <span>Total Capacity: <strong>{event.total_capacity}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Venue Spotlight card */}
+            <div className="ed-card" style={{ marginTop: "24px" }}>
+              <h2 className="ed-section-title">Venue Spotlight</h2>
+              <div className="ed-spotlight-venue">
+                <h3 className="ed-spotlight-name">{venue.name || "Secret Club"}</h3>
+                <p className="ed-spotlight-address">📍 {venue.address}, {venue.city}</p>
+                <div className="ed-spotlight-row">
+                  <span className="ed-spotlight-lbl">Timings</span>
+                  <span className="ed-spotlight-val">🕒 {formatTime(venue.opening_time)} - {formatTime(venue.closing_time)}</span>
+                </div>
+                <div className="ed-spotlight-row">
+                  <span className="ed-spotlight-lbl">Contact</span>
+                  <span className="ed-spotlight-val">{venue.phone || "+91 98765 43210"}</span>
+                </div>
+                <a href={mapsUrl} target="_blank" rel="noreferrer" className="ed-spotlight-maps-btn">
+                  <HiArrowTopRightOnSquare /> Get Directions
                 </a>
               </div>
             </div>
-          )}
 
-          {/* Share Button */}
-          <button className="ed-share-btn" onClick={handleShare}>
-            <HiShare />
-            Share this event
-          </button>
-        </motion.div>
-      </div>
+          </div>
 
-      {/* ═══════════════════════════
-         STICKY MOBILE CTA
-       ═══════════════════════════ */}
-      <div className="ed-sticky-cta">
-        <div className="ed-sticky-cta__price">
-          <span>Starting from</span>
-          ₹{lowestPrice}+
         </div>
-        <button className="ed-sticky-cta__btn" onClick={handleBookClick}>
-          Book Now
-        </button>
+
+        {/* 3. Related events (Bottom list slider) */}
+        {relatedEvents.length > 0 && (
+          <div className="ed-related-section">
+            <h2 className="ed-related-title">
+              <HiSparkles style={{ color: "#7d5cfc", marginRight: "8px", verticalAlign: "middle" }} />
+              More Events You'll Love
+            </h2>
+            <div className="ed-related-grid">
+              {relatedEvents.map((e) => (
+                <EventCard key={e.id} event={e} />
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Checkout Modal */}
+      {/* 4. Checkout payment overlay portal */}
       {checkoutOpen && (
-        <div className="checkout-overlay">
-          <div className="checkout-modal">
-            <button
-              className="checkout-modal__close"
-              onClick={() => {
-                setCheckoutOpen(false);
-                setBookingResult(null);
-                setCardNumber("");
-                setExpiry("");
-                setCvv("");
-              }}
-            >
-              ✕
-            </button>
-
+        <div className="ed-modal-overlay" onClick={() => setCheckoutOpen(false)}>
+          <div className="ed-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="ed-modal-header">
+              <h2>Secure Pass Checkout</h2>
+              <button className="ed-modal-close" onClick={() => setCheckoutOpen(false)}>&times;</button>
+            </div>
+            
             {!bookingResult ? (
-              <>
-                <h2 className="checkout-modal__title">Complete Booking</h2>
-                <p className="checkout-modal__subtitle">{event.title}</p>
-
-                {/* Summary Table */}
-                {(() => {
-                  const basePrice = (event.pricing[selectedTier]?.price || 0) * quantity;
-                  const isStudentDealApplied = profile?.is_student && event.is_student_deal;
-                  const discountAmount = isStudentDealApplied ? Math.round(basePrice * ((event.student_discount_percent || 0) / 100)) : 0;
-                  const finalTotal = basePrice - discountAmount;
-
-                  return (
-                    <>
-                      <div className="checkout-summary">
-                        <div className="checkout-summary__row">
-                          <span>
-                            {event.pricing[selectedTier]?.label} × {quantity}
-                          </span>
-                          <span>₹{basePrice}</span>
-                        </div>
-                        {isStudentDealApplied && (
-                          <div className="checkout-summary__row" style={{ color: "#10b981", fontWeight: 600 }}>
-                            <span>Student Deal Discount (-{event.student_discount_percent}%)</span>
-                            <span>-₹{discountAmount}</span>
-                          </div>
-                        )}
-                        <div className="checkout-summary__row">
-                          <span>Booking Fees (Free)</span>
-                          <span>₹0</span>
-                        </div>
-                        <div className="checkout-summary__row checkout-summary__row--total">
-                          <span>Total Amount</span>
-                          <span>₹{finalTotal}</span>
-                        </div>
-                      </div>
-
-                      <form onSubmit={handleCheckoutSubmit} className="checkout-payment-form">
-                        <div className="checkout-input-wrapper">
-                          <label>Card Number</label>
-                          <input
-                            type="text"
-                            placeholder="1234 5678 1234 5678"
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            maxLength={19}
-                            required
-                          />
-                        </div>
-
-                        <div className="checkout-form-row">
-                          <div className="checkout-input-wrapper">
-                            <label>Expiry Date</label>
-                            <input
-                              type="text"
-                              placeholder="MM/YY"
-                              value={expiry}
-                              onChange={(e) => setExpiry(e.target.value)}
-                              maxLength={5}
-                              required
-                            />
-                          </div>
-                          <div className="checkout-input-wrapper">
-                            <label>CVV</label>
-                            <input
-                              type="password"
-                              placeholder="123"
-                              value={cvv}
-                              onChange={(e) => setCvv(e.target.value)}
-                              maxLength={3}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="ed-pricing__book-btn"
-                          style={{ marginTop: "16px" }}
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? "Processing..." : `Pay ₹${finalTotal}`}
-                        </button>
-                      </form>
-                    </>
-                  );
-                })()}
-              </>
-            ) : (
-              <div className="checkout-success">
-                <div className="checkout-success__icon">✓</div>
-                <h2 className="checkout-success__title">Booking Confirmed!</h2>
-                <p className="checkout-success__msg">Your passes are ready. See you at the door! 🥂</p>
-
-                <div className="checkout-success__box">
-                  <span className="checkout-success__code-label">Booking Code</span>
-                  <span className="checkout-success__code">{bookingResult}</span>
+              <form onSubmit={handleCheckoutSubmit} className="ed-checkout-form">
+                <div className="ed-checkout-summary">
+                  <div className="ed-checkout-row">
+                    <span>Ticket Type</span>
+                    <strong>{event.pricing[selectedTier].type}</strong>
+                  </div>
+                  <div className="ed-checkout-row">
+                    <span>Quantity</span>
+                    <strong>{quantity}</strong>
+                  </div>
+                  <div className="ed-checkout-row border-top">
+                    <span>Total Price</span>
+                    <strong style={{ color: "var(--primary-light)" }}>₹{finalPrice}</strong>
+                  </div>
                 </div>
 
-                <Link
-                  to="/my-bookings"
-                  onClick={() => setCheckoutOpen(false)}
-                  className="ed-pricing__book-btn"
-                  style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", alignItems: "center" }}
-                >
-                  Go to My Tickets
-                </Link>
+                <div className="ed-card-fields">
+                  <div className="create-event__field">
+                    <label>Card Number</label>
+                    <input 
+                      type="text" 
+                      placeholder="4111 2222 3333 4444"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      maxLength={19}
+                      required
+                    />
+                  </div>
+                  <div className="ed-card-row">
+                    <div className="create-event__field">
+                      <label>Expiry Date</label>
+                      <input 
+                        type="text" 
+                        placeholder="MM/YY"
+                        value={expiry}
+                        onChange={(e) => setExpiry(e.target.value)}
+                        maxLength={5}
+                        required
+                      />
+                    </div>
+                    <div className="create-event__field">
+                      <label>CVV</label>
+                      <input 
+                        type="password" 
+                        placeholder="123"
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value)}
+                        maxLength={3}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" className="ed-checkout-submit-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "Processing Payment..." : `Pay ₹${finalPrice}`}
+                </button>
+              </form>
+            ) : (
+              <div className="ed-booking-success">
+                <span className="success-icon">🎟️</span>
+                <h2>Pass Secured!</h2>
+                <p>Your payment was verified. Show the QR Pass at the door for gate check-in.</p>
+                <div className="booking-code-box">
+                  <span>Booking Code</span>
+                  <strong>{bookingResult}</strong>
+                </div>
+                <div style={{ display: "flex", gap: "12px", marginTop: "24px" }}>
+                  <Link to="/my-bookings" className="ed-success-btn">
+                    View My Tickets
+                  </Link>
+                  <button className="ed-success-btn secondary" onClick={() => {
+                    setCheckoutOpen(false);
+                    setBookingResult(null);
+                    setCardNumber("");
+                    setExpiry("");
+                    setCvv("");
+                  }}>
+                    Close
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -343,3 +343,44 @@ export const togglePinMessage = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// GET /api/squads/my/active — Get active squads for the logged-in user
+export const getMySquads = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch squad memberships for the user
+    const { data: memberships, error: memberErr } = await supabase
+      .from("squad_members")
+      .select("squad_id")
+      .eq("user_id", userId);
+
+    if (memberErr) throw memberErr;
+    if (!memberships || memberships.length === 0) {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const squadIds = memberships.map((m) => m.squad_id);
+
+    // Fetch the detailed squad data
+    const { data: squads, error: squadsErr } = await supabase
+      .from("squads")
+      .select(`
+        *,
+        leader:profiles (id, full_name, email),
+        event:events (
+          id, title, date, start_time, poster_url,
+          venue:venues (id, name, city)
+        )
+      `)
+      .in("id", squadIds)
+      .eq("is_active", true);
+
+    if (squadsErr) throw squadsErr;
+
+    res.status(200).json({ success: true, data: squads });
+  } catch (error) {
+    console.error("Error getting active squads:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

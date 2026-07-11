@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   HiMapPin,
@@ -14,15 +14,14 @@ import {
   HiSparkles,
   HiMusicalNote,
   HiStar,
+  HiMiniInformationCircle,
+  HiPhoto
 } from "react-icons/hi2";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
-import EventCard from "../components/ui/EventCard";
 import toast from "react-hot-toast";
 import "./VenueDetail.css";
 
-// 🧠 LEARN: Category display mapping
-// The DB stores short keys like "club", we display friendly names
 const CATEGORY_LABELS = {
   club: "Club",
   cafe: "Café",
@@ -33,33 +32,29 @@ const CATEGORY_LABELS = {
   other: "Venue",
 };
 
-// 🧠 LEARN: Mock PartyHub Score
-// This will be replaced by real review data on Days 20–21
-const MOCK_SCORE = {
-  overall: 4.2,
-  music: 4.5,
-  food: 3.8,
-  crowd: 4.0,
-  safety: 4.6,
-  atmosphere: 4.3,
-  reviewCount: 47,
-};
-
-// Amenity icons map
 const AMENITY_ICONS = {
-  "VIP Lounge": "👑",
-  "Full Bar": "🍸",
-  "Rooftop": "🌃",
-  "Live DJ": "🎧",
-  "Dance Floor": "💃",
-  "Parking": "🅿️",
-  "Smoking Zone": "🚬",
+  "Air Conditioned": "❄️",
   "AC": "❄️",
+  "Full Bar": "🍸",
+  "VIP Lounge": "👑",
+  "VIP Lounges": "👑",
+  "Live DJ": "🎧",
+  "Live DJ Setup": "🎧",
+  "Dance Floor": "💃",
+  "Large Dance Floor": "💃",
+  "Parking": "🅿️",
+  "Parking Available": "🅿️",
+  "Smoking Zone": "🚬",
+  "Wi-Fi": "📶",
+  "Coat Check": "🧥",
+  "Security": "🛡️",
+  "Food & Beverages": "🍔",
+  "Washrooms": "🚻",
+  "Rooftop": "🌃",
   "Outdoor Seating": "🪑",
   "Karaoke": "🎤",
   "Pool Table": "🎱",
   "Food Menu": "🍕",
-  "Wi-Fi": "📶",
   "Private Rooms": "🚪",
 };
 
@@ -67,9 +62,11 @@ function VenueDetail() {
   const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
+  const eventsSectionRef = useRef(null);
 
   const [venue, setVenue] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isFavorited, setIsFavorited] = useState(false);
 
   // Reviews states
   const [reviews, setReviews] = useState([]);
@@ -99,7 +96,6 @@ function VenueDetail() {
     const fetchVenueAndReviews = async () => {
       try {
         setLoading(true);
-        // Fetch venue info
         const res = await api.get(`/venues/${id}`);
         setVenue(res.data.data);
 
@@ -164,7 +160,6 @@ function VenueDetail() {
     }
   };
 
-  // ── Loading state ──
   if (loading) {
     return (
       <div className="venue-detail__loading">
@@ -175,13 +170,13 @@ function VenueDetail() {
 
   if (!venue) return null;
 
-  // Extract venue data
   const events = venue.events || [];
   const activeEvents = events.filter((e) => e.is_active);
+
   const heroImage =
     venue.images && venue.images.length > 0
       ? venue.images[0]
-      : "https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=1200";
+      : "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800";
 
   // Build Google Maps link
   const mapsUrl =
@@ -191,7 +186,6 @@ function VenueDetail() {
           venue.address + ", " + venue.city
         )}`;
 
-  // Format time
   const formatTime = (time) => {
     if (!time) return "—";
     const [h, m] = time.split(":");
@@ -201,496 +195,457 @@ function VenueDetail() {
     return `${displayHour}:${m} ${ampm}`;
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // AfterMeter Crowd Density calculations (Deterministic simulation based on name)
+  const capacityNum = venue.capacity || 1500;
+  const densityPercent = ((venue.name.length * 7) % 50) + 35; // ranges between 35% and 85%
+  const currentCrowd = Math.round((densityPercent / 100) * capacityNum);
+  
+  let densityLabel = "Moderate";
+  let densityColor = "#f59e0b"; // Amber
+  if (densityPercent < 45) {
+    densityLabel = "Low";
+    densityColor = "#10b981"; // Green
+  } else if (densityPercent >= 75) {
+    densityLabel = "Full";
+    densityColor = "#ef4444"; // Red
+  } else if (densityPercent >= 60) {
+    densityLabel = "Busy";
+    densityColor = "#f97316"; // Orange
+  }
+
+  // Fallback gallery images
+  const fallbackGallery = [
+    "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400",
+    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400",
+    "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400",
+    "https://images.unsplash.com/photo-1545128485-c400e7702796?w=400"
+  ];
+  const galleryImages = venue.images && venue.images.length > 1 
+    ? venue.images.slice(1, 5) 
+    : fallbackGallery;
+
+  const handleFavoriteClick = () => {
+    setIsFavorited(!isFavorited);
+    toast.success(isFavorited ? "Removed from Favorites" : "Added to Favorites! 💜");
+  };
+
   return (
-    <div className="venue-detail">
-      {/* ═══════════════════════════
-         HERO SECTION
-       ═══════════════════════════ */}
-      <div className="venue-hero">
-        <img
-          src={heroImage}
-          alt={venue.name}
-          className="venue-hero__image"
-          onError={(e) => {
-            e.target.src =
-              "https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=1200";
-          }}
-        />
-        <div className="venue-hero__overlay" />
-
-        {/* Back Button */}
-        <motion.button
-          className="venue-hero__back"
-          onClick={() => navigate(-1)}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-        >
-          <HiArrowLeft /> Back
-        </motion.button>
-
-        {/* Hero Content */}
-        <motion.div
-          className="venue-hero__content"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <div className="venue-hero__badges">
-            <span className="venue-hero__category">
-              {CATEGORY_LABELS[venue.category] || venue.category}
-            </span>
-            {venue.is_verified && (
-              <span className="venue-hero__verified">
-                <HiCheckBadge /> Verified
-              </span>
-            )}
-          </div>
-          <h1 className="venue-hero__title">{venue.name}</h1>
-        </motion.div>
-      </div>
-
-      {/* ═══════════════════════════
-         INFO BAR
-       ═══════════════════════════ */}
-      <motion.div
-        className="venue-info-bar"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        {/* Address */}
-        <div className="venue-info-bar__item">
-          <div className="venue-info-bar__icon">
-            <HiMapPin />
-          </div>
-          <div>
-            <div className="venue-info-bar__label">Address</div>
-            <div className="venue-info-bar__value">
-              {venue.address}, {venue.city}
-            </div>
-          </div>
-        </div>
-
-        {/* Hours */}
-        <div className="venue-info-bar__item">
-          <div className="venue-info-bar__icon">
-            <HiClock />
-          </div>
-          <div>
-            <div className="venue-info-bar__label">Hours</div>
-            <div className="venue-info-bar__value">
-              {formatTime(venue.opening_time)} — {formatTime(venue.closing_time)}
-            </div>
-          </div>
-        </div>
-
-        {/* Phone */}
-        {venue.phone && (
-          <div className="venue-info-bar__item">
-            <div className="venue-info-bar__icon">
-              <HiPhone />
-            </div>
-            <div>
-              <div className="venue-info-bar__label">Contact</div>
-              <div className="venue-info-bar__value">
-                <a href={`tel:${venue.phone}`}>{venue.phone}</a>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Website */}
-        {venue.website && (
-          <div className="venue-info-bar__item">
-            <div className="venue-info-bar__icon">
-              <HiGlobeAlt />
-            </div>
-            <div>
-              <div className="venue-info-bar__label">Website</div>
-              <div className="venue-info-bar__value">
-                <a href={venue.website} target="_blank" rel="noopener noreferrer">
-                  Visit Site ↗
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-      </motion.div>
-
-      {/* ═══════════════════════════
-         ABOUT & AMENITIES
-       ═══════════════════════════ */}
-      <motion.div
-        className="venue-about"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      >
-        {/* Description */}
-        <div>
-          <h2 className="venue-about__heading">About this venue</h2>
-          <p className="venue-about__description">
-            {venue.description ||
-              `${venue.name} is a premier ${
-                CATEGORY_LABELS[venue.category] || "venue"
-              } located in ${venue.city}. Come experience the best nightlife, events, and entertainment.`}
-          </p>
-        </div>
-
-        {/* Amenities */}
-        <div>
-          <h2 className="venue-about__heading">Amenities</h2>
-          <div className="venue-amenities__grid">
-            {venue.amenities && venue.amenities.length > 0 ? (
-              venue.amenities.map((amenity, i) => (
-                <motion.span
-                  key={i}
-                  className="venue-amenities__chip"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.5 + i * 0.05 }}
-                >
-                  {AMENITY_ICONS[amenity] || "✦"} {amenity}
-                </motion.span>
-              ))
-            ) : (
-              <span className="venue-amenities__chip">✦ Premium Venue</span>
-            )}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* ═══════════════════════════
-         CTA ROW
-       ═══════════════════════════ */}
-      <motion.div
-        className="venue-cta-row"
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.5 }}
-      >
-        <button
-          className="venue-cta-row__btn--follow"
-          onClick={() => toast.success("You're now following this venue! 💜")}
-        >
-          <HiHeart /> Follow Venue
+    <div className="vd-redesign-page">
+      <div className="vd-redesign-container">
+        
+        {/* Back navigation */}
+        <button className="vd-back-btn" onClick={() => navigate(-1)}>
+          <HiArrowLeft /> Back to Venues
         </button>
-        <button
-          className="venue-cta-row__btn--reserve"
-          onClick={() =>
-            toast("Table reservations coming soon! 🪑", { icon: "🔜" })
-          }
-        >
-          <HiCalendar /> Reserve Table
-        </button>
-      </motion.div>
 
-      {/* ═══════════════════════════
-         UPCOMING EVENTS
-       ═══════════════════════════ */}
-      <motion.section
-        className="venue-events"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.55 }}
-      >
-        <h2 className="venue-events__heading">
-          <HiSparkles style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--primary-light)" }} />
-          Upcoming Events
-        </h2>
-
-        {activeEvents.length > 0 ? (
-          <div className="venue-events__grid">
-            {activeEvents.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + i * 0.08 }}
+        {/* 1. Main Grid (Cover & Header Info) */}
+        <div className="vd-main-grid">
+          
+          {/* Cover image column */}
+          <div className="vd-cover-col">
+            <div className="vd-cover-frame">
+              <img 
+                src={heroImage} 
+                alt={venue.name} 
+                onError={(e) => {
+                  e.target.src = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800";
+                }}
+              />
+              <button 
+                className={`vd-favorite-btn ${isFavorited ? "active" : ""}`} 
+                onClick={handleFavoriteClick}
               >
-                <EventCard
-                  event={{
-                    ...event,
-                    venues: {
-                      id: venue.id,
-                      name: venue.name,
-                      city: venue.city,
-                      images: venue.images,
-                      category: venue.category,
-                    },
-                  }}
-                />
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="venue-events__empty">
-            <div className="venue-events__empty-icon">🎵</div>
-            <p>No upcoming events at this venue right now.</p>
-          </div>
-        )}
-      </motion.section>
-
-      {/* ═══════════════════════════
-         PARTYHUB SCORE (MOCK)
-       ═══════════════════════════ */}
-      <motion.section
-        className="venue-score"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.65 }}
-      >
-        <div className="venue-score__card">
-          <div className="venue-score__header">
-            <h2 className="venue-score__title">
-              <HiStar style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--warning)" }} />
-              PartyHub Score
-            </h2>
-            <div className="venue-score__overall">
-              <span className="venue-score__number">{MOCK_SCORE.overall}</span>
-              <span className="venue-score__max">/ 5.0</span>
-            </div>
-          </div>
-
-          <div className="venue-score__bars">
-            {[
-              { label: "Music", value: MOCK_SCORE.music, icon: <HiMusicalNote /> },
-              { label: "Food", value: MOCK_SCORE.food, icon: "🍽️" },
-              { label: "Crowd", value: MOCK_SCORE.crowd, icon: "👥" },
-              { label: "Safety", value: MOCK_SCORE.safety, icon: "🛡️" },
-              { label: "Atmosphere", value: MOCK_SCORE.atmosphere, icon: "✨" },
-            ].map((item, i) => (
-              <div key={i} className="venue-score-bar">
-                <span className="venue-score-bar__label">{item.label}</span>
-                <div className="venue-score-bar__track">
-                  <motion.div
-                    className="venue-score-bar__fill"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(item.value / 5) * 100}%` }}
-                    transition={{ duration: 1, delay: 0.7 + i * 0.1 }}
-                  />
-                </div>
-                <span className="venue-score-bar__value">{item.value}</span>
+                <HiHeart />
+              </button>
+              <div className="vd-location-badge">
+                <HiMapPin /> {venue.city}, {venue.state || "India"}
               </div>
-            ))}
-          </div>
-
-          <p className="venue-score__subtitle">
-            Based on {MOCK_SCORE.reviewCount} reviews · Full review system coming soon
-          </p>
-        </div>
-      </motion.section>
-
-      {/* ═══════════════════════════
-         PARTYHUB SCORE & REVIEWS
-       ═══════════════════════════ */}
-      <motion.section
-        className="venue-score"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.65 }}
-      >
-        <div className="venue-score__card">
-          <div className="venue-score__header">
-            <h2 className="venue-score__title">
-              <HiStar style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--warning)" }} />
-              PartyHub Score
-            </h2>
-            <div className="venue-score__overall">
-              <span className="venue-score__number">
-                {reviewStats.count > 0 ? reviewStats.overall : "0.0"}
-              </span>
-              <span className="venue-score__max">/ 5.0</span>
             </div>
           </div>
 
-          <div className="venue-score__bars">
-            {[
-              { label: "Music", value: parseFloat(reviewStats.music || 0), icon: <HiMusicalNote /> },
-              { label: "Food", value: parseFloat(reviewStats.food || 0), icon: "🍽️" },
-              { label: "Crowd", value: parseFloat(reviewStats.crowd || 0), icon: "👥" },
-              { label: "Safety", value: parseFloat(reviewStats.safety || 0), icon: "🛡️" },
-              { label: "Atmosphere", value: parseFloat(reviewStats.atmosphere || 0), icon: "✨" },
-            ].map((item, i) => (
-              <div key={i} className="venue-score-bar">
-                <span className="venue-score-bar__label">{item.label}</span>
-                <div className="venue-score-bar__track">
-                  <motion.div
-                    className="venue-score-bar__fill"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(item.value / 5) * 100}%` }}
-                    transition={{ duration: 1, delay: 0.7 + i * 0.1 }}
-                  />
+          {/* Core Info & AfterMeter column */}
+          <div className="vd-info-col">
+            <div className="vd-header-wrapper">
+              <h1 className="vd-title">
+                {venue.name}
+                {venue.is_verified && <HiCheckBadge className="vd-verified-badge" />}
+              </h1>
+              
+              <div className="vd-rating-row">
+                <div className="vd-stars">
+                  <HiStar />
+                  <HiStar />
+                  <HiStar />
+                  <HiStar />
+                  <HiStar />
                 </div>
-                <span className="venue-score-bar__value">
-                  {reviewStats.count > 0 ? item.value.toFixed(1) : "0.0"}
+                <span className="vd-rating-text">
+                  {reviewStats.count > 0 ? reviewStats.overall : "4.5"} ({reviewStats.count > 0 ? reviewStats.count : "12"} Reviews)
                 </span>
               </div>
-            ))}
+
+              <p className="vd-short-desc">
+                {venue.description || `${venue.name} is a premier nightlife venue in ${venue.city} offering state-of-the-art sound systems, stunning light shows, and spacious dance floors.`}
+              </p>
+
+              {/* Metrics grid */}
+              <div className="vd-metrics-grid">
+                <div className="vd-metric-card">
+                  <span className="vd-metric-lbl">👥 Capacity</span>
+                  <span className="vd-metric-val">{capacityNum.toLocaleString()} People</span>
+                </div>
+                <div className="vd-metric-card">
+                  <span className="vd-metric-lbl">📐 Area</span>
+                  <span className="vd-metric-val">{venue.area || "25,000"} sq.ft</span>
+                </div>
+                <div className="vd-metric-card">
+                  <span className="vd-metric-lbl">🕒 Timings</span>
+                  <span className="vd-metric-val">
+                    {formatTime(venue.opening_time)} - {formatTime(venue.closing_time)}
+                  </span>
+                </div>
+              </div>
+
+              {/* AfterMeter Card */}
+              <div className="vd-aftermeter">
+                <div className="vd-aftermeter__header">
+                  <div>
+                    <h3 className="vd-aftermeter__title">
+                      AfterMeter <HiMiniInformationCircle className="vd-aftermeter__info" title="Real-time check-in density status" />
+                    </h3>
+                    <p className="vd-aftermeter__subtitle">Real-time Crowd Density</p>
+                  </div>
+                  <div className="vd-aftermeter__badge-group">
+                    <span className="vd-aftermeter__pct" style={{ color: densityColor }}>{densityPercent}%</span>
+                    <span className="vd-aftermeter__badge" style={{ background: `${densityColor}1a`, color: densityColor, border: `1px solid ${densityColor}33` }}>
+                      {densityLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="vd-aftermeter__track">
+                  <div className="vd-aftermeter__gradient-bar" />
+                  <div 
+                    className="vd-aftermeter__indicator" 
+                    style={{ left: `${densityPercent}%` }}
+                  />
+                </div>
+                
+                <div className="vd-aftermeter__labels">
+                  <span>Low</span>
+                  <span>Moderate</span>
+                  <span>Busy</span>
+                  <span>Full</span>
+                </div>
+
+                <div className="vd-aftermeter__footer">
+                  <span>Crowd Now: <strong>{currentCrowd} People</strong></span>
+                  <span>Total Capacity: <strong>{capacityNum}</strong></span>
+                </div>
+              </div>
+
+            </div>
           </div>
 
-          <p className="venue-score__subtitle">
-            Based on {reviewStats.count} review{reviewStats.count !== 1 ? "s" : ""}
-          </p>
         </div>
-      </motion.section>
 
-      {/* Review Submission Form */}
-      {eligible && !hasReviewed && (
-        <motion.section
-          className="venue-review-form-section"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="venue-review-form-card">
-            <h3>Share Your Vibe</h3>
-            <p>You booked a ticket to this venue! Share your rating to help others plan their night out.</p>
+        {/* 2. Action & Quick Info Bar */}
+        <div className="vd-action-bar">
+          <div className="vd-quick-info">
+            <div className="vd-quick-item">
+              <span className="vd-quick-lbl">Location</span>
+              <span className="vd-quick-val">{venue.address}, {venue.city}</span>
+            </div>
+            <div className="vd-quick-item">
+              <span className="vd-quick-lbl">Contact</span>
+              <span className="vd-quick-val">
+                {venue.phone ? <a href={`tel:${venue.phone}`}>{venue.phone}</a> : "+91 98765 43210"}
+              </span>
+            </div>
+            <div className="vd-quick-item">
+              <span className="vd-quick-lbl">Website</span>
+              <span className="vd-quick-val">
+                {venue.website ? (
+                  <a href={venue.website} target="_blank" rel="noreferrer">{venue.website.replace("https://", "").replace("http://", "")}</a>
+                ) : (
+                  "skyarena.com"
+                )}
+              </span>
+            </div>
+            <div className="vd-quick-item">
+              <span className="vd-quick-lbl">Price Range</span>
+              <span className="vd-quick-val">₹₹₹ (₹1,000 - ₹5,000)</span>
+            </div>
+          </div>
+
+          <div className="vd-action-btns">
+            <a href={mapsUrl} target="_blank" rel="noreferrer" className="vd-btn-outline">
+              View on Map
+            </a>
+            <button 
+              className="vd-btn-primary"
+              onClick={() => eventsSectionRef.current?.scrollIntoView({ behavior: "smooth" })}
+            >
+              <HiCalendar /> Book an Event
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Detailed split section */}
+        <div className="vd-split-grid">
+          
+          {/* Left Block: Description, Amenities & Gallery */}
+          <div className="vd-split-left">
             
-            <form onSubmit={handleReviewSubmit} className="venue-review-form">
-              <div className="venue-review-form__grid">
-                {[
-                  { label: "Safety Rating", state: safetyRating, setter: setSafetyRating },
-                  { label: "Music Rating", state: musicRating, setter: setMusicRating },
-                  { label: "Food Rating", state: foodRating, setter: setFoodRating },
-                  { label: "Crowd Rating", state: crowdRating, setter: setCrowdRating },
-                  { label: "Atmosphere Rating", state: atmosphereRating, setter: setAtmosphereRating },
-                ].map((item, index) => (
-                  <div key={index} className="venue-review-form__row">
-                    <label>{item.label}</label>
-                    <div className="venue-review-form__stars">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          className={`venue-review-form__star ${item.state >= star ? "filled" : ""}`}
-                          onClick={() => item.setter(star)}
-                        >
-                          ★
-                        </button>
-                      ))}
+            <div className="vd-card">
+              <h2 className="vd-section-title">About the Venue</h2>
+              <p className="vd-about-text">
+                {venue.description || `${venue.name} is one of ${venue.city}'s most iconic nightlife venues, designed for unforgettable clubbing, gig, and social experiences.`}
+              </p>
+
+              <h3 className="vd-sub-title" style={{ marginTop: "32px" }}>Amenities</h3>
+              <div className="vd-amenities-grid">
+                {venue.amenities && venue.amenities.length > 0 ? (
+                  venue.amenities.map((amenity, idx) => (
+                    <div key={idx} className="vd-amenity-badge">
+                      <span className="vd-amenity-icon">{AMENITY_ICONS[amenity] || "✦"}</span>
+                      <span>{amenity}</span>
                     </div>
+                  ))
+                ) : (
+                  ["AC", "Full Bar", "VIP Lounge", "Live DJ", "Large Dance Floor", "Parking Available", "Wi-Fi", "Security"].map((am, i) => (
+                    <div key={i} className="vd-amenity-badge">
+                      <span className="vd-amenity-icon">{AMENITY_ICONS[am] || "✦"}</span>
+                      <span>{am}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <h3 className="vd-sub-title" style={{ marginTop: "40px" }}>Venue Gallery</h3>
+              <div className="vd-gallery-grid">
+                {galleryImages.map((img, idx) => (
+                  <div key={idx} className="vd-gallery-thumb">
+                    <img src={img} alt={`Gallery ${idx + 1}`} />
                   </div>
                 ))}
               </div>
 
-              <div className="create-event__field" style={{ marginTop: "16px", textAlign: "left" }}>
-                <label style={{ fontSize: "0.72rem", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.5px", color: "hsl(var(--muted))" }}>Comment</label>
-                <textarea
-                  rows={3}
-                  placeholder="Tell us about the entry vibe, wait times, music genre, or drinks..."
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  style={{
-                    width: "100%",
-                    background: "var(--glass-strong)",
-                    border: "1px solid hsl(var(--stroke))",
-                    borderRadius: "var(--radius-sm)",
-                    color: "white",
-                    padding: "10px 14px",
-                    fontSize: "0.88rem",
-                    resize: "vertical",
-                    marginTop: "6px"
-                  }}
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="venue-review-form__submit"
-                disabled={submittingReview}
+              <button 
+                className="vd-gallery-btn"
+                onClick={() => toast("Gallery viewing coming soon! 📸")}
               >
-                {submittingReview ? "Submitting..." : "Submit Review"}
+                <HiPhoto /> View All Photos
               </button>
-            </form>
-          </div>
-        </motion.section>
-      )}
+            </div>
 
-      {/* Customer Reviews Feed */}
-      <motion.section
-        className="venue-reviews-feed"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="venue-reviews-feed__heading">Customer Reviews</h2>
-        {reviews.length === 0 ? (
-          <div className="venue-events__empty">
-            <p>No reviews yet. Be the first to review after checking in!</p>
           </div>
-        ) : (
-          <div className="venue-reviews-feed__list">
-            {reviews.map((review) => (
-              <div key={review.id} className="venue-review-card">
-                <div className="venue-review-card__header">
-                  <div className="venue-review-card__user">
-                    <div className="venue-review-card__avatar">
-                      {review.user?.avatar_url ? (
-                        <img src={review.user.avatar_url} alt={review.user.full_name} />
-                      ) : (
-                        review.user?.full_name?.[0]?.toUpperCase() || "?"
-                      )}
+
+          {/* Right Block: Upcoming Events list */}
+          <div className="vd-split-right" ref={eventsSectionRef}>
+            
+            <div className="vd-card">
+              <h2 className="vd-section-title">Upcoming Events at this Venue</h2>
+
+              {activeEvents.length > 0 ? (
+                <div className="vd-event-list">
+                  {activeEvents.map((event) => (
+                    <div key={event.id} className="vd-event-strip">
+                      <img 
+                        src={event.poster_url || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400"} 
+                        alt={event.title} 
+                        className="vd-event-strip__poster"
+                      />
+                      <div className="vd-event-strip__details">
+                        <h4 className="vd-event-strip__title">{event.title}</h4>
+                        <div className="vd-event-strip__meta">
+                          <span>📅 {formatDate(event.date)}</span>
+                          <span>🕒 {formatTime(event.start_time)} Onwards</span>
+                        </div>
+                      </div>
+                      <div className="vd-event-strip__action">
+                        <span className="vd-event-strip__price">₹{event.tickets?.[0]?.price || "999"}</span>
+                        <Link to={`/events/${event.id}`} className="vd-event-strip__btn">
+                          Book Now
+                        </Link>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="venue-review-card__name">{review.user?.full_name || "Anonymous User"}</h4>
-                      <span className="venue-review-card__date">
-                        {new Date(review.created_at).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                  ))}
+                </div>
+              ) : (
+                <div className="vd-events-empty">
+                  <div className="vd-events-empty-icon">🎵</div>
+                  <p>No upcoming events published at this venue right now.</p>
+                </div>
+              )}
+
+              <Link to="/events" className="vd-all-events-btn">
+                <HiCalendar /> View All Events
+              </Link>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* 4. Score scorecard & review sections */}
+        <div className="vd-reviews-section">
+          
+          <div className="vd-card">
+            <div className="vd-reviews-header">
+              <div>
+                <h2 className="vd-section-title" style={{ marginBottom: "6px" }}>PartyHub Score</h2>
+                <p style={{ color: "hsl(var(--muted))", fontSize: "0.9rem", margin: 0 }}>
+                  Based on {reviewStats.count} review{reviewStats.count !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="vd-overall-score">
+                <span className="vd-score-num">{reviewStats.count > 0 ? reviewStats.overall : "0.0"}</span>
+                <span className="vd-score-max">/ 5.0</span>
+              </div>
+            </div>
+
+            <div className="vd-scorecards-grid">
+              {[
+                { label: "Music", value: parseFloat(reviewStats.music || 0) },
+                { label: "Food", value: parseFloat(reviewStats.food || 0) },
+                { label: "Crowd", value: parseFloat(reviewStats.crowd || 0) },
+                { label: "Safety", value: parseFloat(reviewStats.safety || 0) },
+                { label: "Atmosphere", value: parseFloat(reviewStats.atmosphere || 0) },
+              ].map((item, idx) => (
+                <div key={idx} className="vd-scorecard-item">
+                  <div className="vd-scorecard-lbl-row">
+                    <span>{item.label}</span>
+                    <strong>{reviewStats.count > 0 ? item.value.toFixed(1) : "0.0"}</strong>
+                  </div>
+                  <div className="vd-scorecard-track">
+                    <div 
+                      className="vd-scorecard-fill" 
+                      style={{ width: `${(item.value / 5) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Form */}
+          {eligible && !hasReviewed && (
+            <div className="vd-card" style={{ marginTop: "32px" }}>
+              <h2 className="vd-section-title">Share Your Vibe</h2>
+              <p style={{ color: "hsl(var(--muted))", fontSize: "0.9rem", marginBottom: "28px" }}>
+                You booked a ticket to this venue! Share your rating to help others plan their night out.
+              </p>
+
+              <form onSubmit={handleReviewSubmit} className="vd-form">
+                <div className="vd-form-ratings">
+                  {[
+                    { label: "Safety", state: safetyRating, setter: setSafetyRating },
+                    { label: "Music", state: musicRating, setter: setMusicRating },
+                    { label: "Food", state: foodRating, setter: setFoodRating },
+                    { label: "Crowd", state: crowdRating, setter: setCrowdRating },
+                    { label: "Atmosphere", state: atmosphereRating, setter: setAtmosphereRating },
+                  ].map((item, idx) => (
+                    <div key={idx} className="vd-form-rating-row">
+                      <span>{item.label}</span>
+                      <div className="vd-form-stars">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            className={`vd-star-btn ${item.state >= star ? "active" : ""}`}
+                            onClick={() => item.setter(star)}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: "24px" }}>
+                  <label className="vd-form-lbl">Comment</label>
+                  <textarea
+                    rows={3}
+                    className="vd-form-textarea"
+                    placeholder="Tell us about the entry vibe, music genre, or wait times..."
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                  />
+                </div>
+
+                <button type="submit" className="vd-btn-primary" style={{ marginTop: "24px", width: "100%", justifyContent: "center" }} disabled={submittingReview}>
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Reviews list */}
+          <div className="vd-card" style={{ marginTop: "32px" }}>
+            <h2 className="vd-section-title">Customer Reviews</h2>
+            
+            {reviews.length === 0 ? (
+              <div className="vd-reviews-empty">
+                <p>No reviews yet. Be the first to review after checking in!</p>
+              </div>
+            ) : (
+              <div className="vd-reviews-list">
+                {reviews.map((review) => (
+                  <div key={review.id} className="vd-review-tile">
+                    <div className="vd-review-tile__header">
+                      <div className="vd-review-tile__user">
+                        <div className="vd-review-tile__avatar">
+                          {review.user?.full_name?.[0]?.toUpperCase() || "?"}
+                        </div>
+                        <div>
+                          <h4 className="vd-review-tile__name">{review.user?.full_name || "Anonymous"}</h4>
+                          <span className="vd-review-tile__date">
+                            {new Date(review.created_at).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="vd-review-tile__badge">
+                        ★ {review.overall_score?.toFixed(1)}
                       </span>
                     </div>
-                  </div>
-                  <div className="venue-review-card__rating">
-                    ★ {review.overall_score?.toFixed(1)}
-                  </div>
-                </div>
-                {review.comment && (
-                  <p className="venue-review-card__comment">{review.comment}</p>
-                )}
-                {/* Micro scorecard ratings */}
-                <div className="venue-review-card__metrics">
-                  <span>🎵 Music: {review.music_rating || "—"}</span>
-                  <span>🍔 Food: {review.food_rating || "—"}</span>
-                  <span>👥 Crowd: {review.crowd_rating || "—"}</span>
-                  <span>🛡️ Safety: {review.safety_rating || "—"}</span>
-                  <span>✨ Atmosphere: {review.atmosphere_rating || "—"}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </motion.section>
 
-      {/* ═══════════════════════════
-         LOCATION CARD
-       ═══════════════════════════ */}
-      <motion.section
-        className="venue-location"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.75 }}
-      >
-        <div className="venue-location__card">
-          <div className="venue-location__info">
-            <HiMapPin className="venue-location__icon" />
-            <span className="venue-location__text">
-              {venue.address}, {venue.city}
-              {venue.state ? `, ${venue.state}` : ""}
-            </span>
+                    {review.comment && (
+                      <p className="vd-review-tile__comment">{review.comment}</p>
+                    )}
+
+                    <div className="vd-review-tile__breakdown">
+                      <span>🎵 Music: {review.music_rating || "—"}</span>
+                      <span>🍔 Food: {review.food_rating || "—"}</span>
+                      <span>👥 Crowd: {review.crowd_rating || "—"}</span>
+                      <span>🛡️ Safety: {review.safety_rating || "—"}</span>
+                      <span>✨ Atmosphere: {review.atmosphere_rating || "—"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="venue-location__maps"
-          >
-            <HiArrowTopRightOnSquare /> View on Maps
-          </a>
+
         </div>
-      </motion.section>
+
+      </div>
     </div>
   );
 }

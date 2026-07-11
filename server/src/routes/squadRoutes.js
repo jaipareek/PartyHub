@@ -9,7 +9,8 @@ import {
   getEventSquads,
   getSquadMessages,
   sendSquadMessage,
-  togglePinMessage
+  togglePinMessage,
+  getMySquads
 } from "../controllers/squadController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -18,6 +19,7 @@ const router = Router();
 // All squad endpoints require authentication
 router.use(protect);
 
+router.get("/my/active", getMySquads);
 router.post("/", createSquad);
 router.post("/:squadId/join", joinSquad);
 router.get("/:squadId", getSquadDetails);
