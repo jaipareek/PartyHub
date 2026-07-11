@@ -19,6 +19,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import MyBookings from "./pages/MyBookings";
 import SquadDetail from "./pages/SquadDetail";
+import UserProfile from "./pages/UserProfile";
 import AuthCallback from "./pages/AuthCallback";
 import LoadingScreen from "./components/ui/LoadingScreen";
 import "./App.css";
@@ -68,6 +69,7 @@ function App() {
           <Route path="/venues/:id" element={<VenueDetail />} />
           <Route path="/my-bookings" element={<MyBookings />} />
           <Route path="/squads/:squadId" element={<SquadDetail />} />
+          <Route path="/profile" element={<UserProfile />} />
 
           {/* Venue Owner Auth */}
           <Route path="/owner/login" element={<OwnerLogin />} />

@@ -121,16 +121,31 @@ export const getProfile = async (req, res) => {
 // PUT /api/auth/profile — Update profile
 export const updateProfile = async (req, res) => {
   try {
-    const { full_name, phone, avatar_url } = req.body;
+    const { full_name, phone, avatar_url, college, student_id_url, aadhar_url, submit_verification } = req.body;
+
+    const updateFields = {
+      full_name,
+      phone,
+      avatar_url,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (submit_verification) {
+      updateFields.college = college;
+      updateFields.student_id_url = student_id_url;
+      updateFields.aadhar_url = aadhar_url;
+      updateFields.student_verification_status = "pending";
+    } else if (req.body.is_student === false) {
+      updateFields.college = null;
+      updateFields.student_id_url = null;
+      updateFields.aadhar_url = null;
+      updateFields.student_verification_status = "not_submitted";
+      updateFields.is_student = false;
+    }
 
     const { data, error } = await supabase
       .from("profiles")
-      .update({
-        full_name,
-        phone,
-        avatar_url,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateFields)
       .eq("id", req.user.id)
       .select()
       .single();

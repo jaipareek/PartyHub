@@ -200,3 +200,121 @@ export const getEventSquads = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// GET /api/squads/:squadId/messages — Fetch all messages for a squad
+export const getSquadMessages = async (req, res) => {
+  try {
+    const { squadId } = req.params;
+
+    const { data, error } = await supabase
+      .from("squad_messages")
+      .select(`
+        *,
+        user:profiles (id, full_name, avatar_url, role)
+      `)
+      .eq("squad_id", squadId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (error) {
+    console.error("Error getting squad messages:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// POST /api/squads/:squadId/messages — Post a new message
+export const sendSquadMessage = async (req, res) => {
+  try {
+    const { squadId } = req.params;
+    const { message } = req.body;
+    const userId = req.user.id;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, error: "Message content is required" });
+    }
+
+    // Verify user is in the squad
+    const { data: member, error: memberErr } = await supabase
+      .from("squad_members")
+      .select("id")
+      .eq("squad_id", squadId)
+      .eq("user_id", userId)
+      .single();
+
+    // Or if they are the leader of the squad
+    const { data: squad, error: squadErr } = await supabase
+      .from("squads")
+      .select("id, leader_id")
+      .eq("id", squadId)
+      .single();
+
+    if ((memberErr || !member) && (squadErr || squad?.leader_id !== userId)) {
+      return res.status(403).json({ success: false, error: "You are not a member of this squad" });
+    }
+
+    const { data, error } = await supabase
+      .from("squad_messages")
+      .insert({
+        squad_id: squadId,
+        user_id: userId,
+        message: message.trim(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ success: true, data });
+  } catch (error) {
+    console.error("Error posting squad message:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// PUT /api/squads/:squadId/messages/:messageId/pin — Pin/unpin a message
+export const togglePinMessage = async (req, res) => {
+  try {
+    const { squadId, messageId } = req.params;
+    const { is_pinned } = req.body;
+    const userId = req.user.id;
+
+    // 1. Verify user is leader of the squad
+    const { data: squad, error: squadErr } = await supabase
+      .from("squads")
+      .select("leader_id")
+      .eq("id", squadId)
+      .single();
+
+    if (squadErr || !squad) {
+      return res.status(404).json({ success: false, error: "Squad not found" });
+    }
+
+    if (squad.leader_id !== userId) {
+      return res.status(403).json({ success: false, error: "Only the squad host/leader can pin announcements" });
+    }
+
+    // If we are pinning a message, unpin all other messages in this squad first
+    if (is_pinned) {
+      await supabase
+        .from("squad_messages")
+        .update({ is_pinned: false })
+        .eq("squad_id", squadId);
+    }
+
+    const { data, error } = await supabase
+      .from("squad_messages")
+      .update({ is_pinned })
+      .eq("id", messageId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, message: is_pinned ? "Message pinned as active announcement!" : "Message unpinned", data });
+  } catch (error) {
+    console.error("Error pinning squad message:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

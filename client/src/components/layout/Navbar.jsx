@@ -97,9 +97,11 @@ function Navbar() {
                 </span>
               </Link>
             ) : (
-              <span className="pill-navbar__avatar" title={user?.email}>
-                {getInitials()}
-              </span>
+              <Link to="/profile" style={{ textDecoration: "none" }}>
+                <span className="pill-navbar__avatar" title="View Profile">
+                  {getInitials()}
+                </span>
+              </Link>
             )}
             <button
               className="pill-navbar__signout"

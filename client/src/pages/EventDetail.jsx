@@ -24,7 +24,7 @@ import "./EventDetail.css";
 function EventDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [event, setEvent] = useState(null);
   const [relatedEvents, setRelatedEvents] = useState([]);
@@ -471,7 +471,11 @@ function EventDetail() {
 
               <button className="ed-pricing__book-btn" onClick={handleBookClick}>
                 <HiTicket />
-                Book {quantity} Pass{quantity > 1 ? "es" : ""} — ₹{(event.pricing[selectedTier]?.price || 0) * quantity}
+                Book {quantity} Pass{quantity > 1 ? "es" : ""} — ₹{
+                  (profile?.is_student && event.is_student_deal)
+                    ? Math.round((event.pricing[selectedTier]?.price || 0) * quantity * (1 - (event.student_discount_percent || 0) / 100))
+                    : ((event.pricing[selectedTier]?.price || 0) * quantity)
+                }
               </button>
             </div>
           )}
@@ -585,70 +589,87 @@ function EventDetail() {
                 <p className="checkout-modal__subtitle">{event.title}</p>
 
                 {/* Summary Table */}
-                <div className="checkout-summary">
-                  <div className="checkout-summary__row">
-                    <span>
-                      {event.pricing[selectedTier]?.label} × {quantity}
-                    </span>
-                    <span>₹{(event.pricing[selectedTier]?.price || 0) * quantity}</span>
-                  </div>
-                  <div className="checkout-summary__row">
-                    <span>Booking Fees (Free)</span>
-                    <span>₹0</span>
-                  </div>
-                  <div className="checkout-summary__row checkout-summary__row--total">
-                    <span>Total Amount</span>
-                    <span>₹{(event.pricing[selectedTier]?.price || 0) * quantity}</span>
-                  </div>
-                </div>
+                {(() => {
+                  const basePrice = (event.pricing[selectedTier]?.price || 0) * quantity;
+                  const isStudentDealApplied = profile?.is_student && event.is_student_deal;
+                  const discountAmount = isStudentDealApplied ? Math.round(basePrice * ((event.student_discount_percent || 0) / 100)) : 0;
+                  const finalTotal = basePrice - discountAmount;
 
-                <form onSubmit={handleCheckoutSubmit} className="checkout-payment-form">
-                  <div className="checkout-input-wrapper">
-                    <label>Card Number</label>
-                    <input
-                      type="text"
-                      placeholder="1234 5678 1234 5678"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      maxLength={19}
-                      required
-                    />
-                  </div>
+                  return (
+                    <>
+                      <div className="checkout-summary">
+                        <div className="checkout-summary__row">
+                          <span>
+                            {event.pricing[selectedTier]?.label} × {quantity}
+                          </span>
+                          <span>₹{basePrice}</span>
+                        </div>
+                        {isStudentDealApplied && (
+                          <div className="checkout-summary__row" style={{ color: "#10b981", fontWeight: 600 }}>
+                            <span>Student Deal Discount (-{event.student_discount_percent}%)</span>
+                            <span>-₹{discountAmount}</span>
+                          </div>
+                        )}
+                        <div className="checkout-summary__row">
+                          <span>Booking Fees (Free)</span>
+                          <span>₹0</span>
+                        </div>
+                        <div className="checkout-summary__row checkout-summary__row--total">
+                          <span>Total Amount</span>
+                          <span>₹{finalTotal}</span>
+                        </div>
+                      </div>
 
-                  <div className="checkout-form-row">
-                    <div className="checkout-input-wrapper">
-                      <label>Expiry Date</label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        maxLength={5}
-                        required
-                      />
-                    </div>
-                    <div className="checkout-input-wrapper">
-                      <label>CVV</label>
-                      <input
-                        type="password"
-                        placeholder="123"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                        maxLength={3}
-                        required
-                      />
-                    </div>
-                  </div>
+                      <form onSubmit={handleCheckoutSubmit} className="checkout-payment-form">
+                        <div className="checkout-input-wrapper">
+                          <label>Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="1234 5678 1234 5678"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(e.target.value)}
+                            maxLength={19}
+                            required
+                          />
+                        </div>
 
-                  <button
-                    type="submit"
-                    className="ed-pricing__book-btn"
-                    style={{ marginTop: "16px" }}
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Processing..." : `Pay ₹${(event.pricing[selectedTier]?.price || 0) * quantity}`}
-                  </button>
-                </form>
+                        <div className="checkout-form-row">
+                          <div className="checkout-input-wrapper">
+                            <label>Expiry Date</label>
+                            <input
+                              type="text"
+                              placeholder="MM/YY"
+                              value={expiry}
+                              onChange={(e) => setExpiry(e.target.value)}
+                              maxLength={5}
+                              required
+                            />
+                          </div>
+                          <div className="checkout-input-wrapper">
+                            <label>CVV</label>
+                            <input
+                              type="password"
+                              placeholder="123"
+                              value={cvv}
+                              onChange={(e) => setCvv(e.target.value)}
+                              maxLength={3}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="ed-pricing__book-btn"
+                          style={{ marginTop: "16px" }}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? "Processing..." : `Pay ₹${finalTotal}`}
+                        </button>
+                      </form>
+                    </>
+                  );
+                })()}
               </>
             ) : (
               <div className="checkout-success">

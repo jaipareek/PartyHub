@@ -61,7 +61,7 @@ app.use(express.urlencoded({ extended: true }));
 //    Without this, someone could DDoS your server easily
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 10000, // High limit for local development and active chat polling
   message: {
     error: "Too many requests, please try again later.",
   },

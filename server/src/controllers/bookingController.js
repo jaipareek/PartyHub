@@ -44,8 +44,18 @@ export const createBooking = async (req, res) => {
       });
     }
 
+    // Get customer profile details
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_student")
+      .eq("id", req.user.id)
+      .single();
+
     const unitPrice = parseFloat(matchedTier.price || 0);
-    const totalAmount = unitPrice * quantity;
+    const basePrice = unitPrice * quantity;
+    const isStudentDealApplied = profile?.is_student && event.is_student_deal;
+    const discountPercent = isStudentDealApplied ? (event.student_discount_percent || 0) : 0;
+    const totalAmount = basePrice * (1 - discountPercent / 100);
 
     // 4. Generate unique alphanumeric booking serial code (e.g. AD-L6J9Q2)
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";

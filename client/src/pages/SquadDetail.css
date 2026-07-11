@@ -246,3 +246,179 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================
+   💬 Crew Chat Room Styles
+   ============================================ */
+.squad-chat-card {
+  padding: 24px;
+}
+
+.squad-chat__window {
+  height: 320px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.squad-chat__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: hsl(var(--muted));
+  font-size: 0.88rem;
+  text-align: center;
+}
+
+.squad-chat__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.squad-chat__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 80%;
+  align-self: flex-start;
+}
+
+.squad-chat__item--self {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.squad-chat__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+}
+
+.squad-chat__sender {
+  font-weight: 700;
+  color: hsl(var(--muted));
+}
+
+.squad-chat__item--self .squad-chat__sender {
+  color: var(--primary-light);
+}
+
+.squad-chat__leader-badge {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.squad-chat__pin-badge {
+  background: rgba(124, 92, 252, 0.12);
+  color: var(--primary-light);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+}
+
+.squad-chat__bubble-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.squad-chat__bubble {
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 4px 16px 16px 16px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  word-break: break-word;
+  text-align: left;
+}
+
+.squad-chat__item--self .squad-chat__bubble {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  border-radius: 16px 4px 16px 16px;
+}
+
+.squad-chat__pin-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  padding: 4px;
+  font-size: 0.95rem;
+}
+
+.squad-chat__bubble-row:hover .squad-chat__pin-btn {
+  opacity: 0.8;
+}
+
+.squad-chat__pin-btn.active, .squad-chat__pin-btn:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.squad-chat__time {
+  font-size: 0.65rem;
+  color: hsl(var(--muted));
+  margin-top: 2px;
+}
+
+.squad-chat__input-area {
+  display: flex;
+  gap: 12px;
+}
+
+.squad-chat__input-area input {
+  flex: 1;
+  background: var(--glass-strong);
+  border: 1px solid hsl(var(--stroke));
+  color: white;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  transition: all var(--transition-fast);
+}
+
+.squad-chat__input-area input:focus {
+  border-color: var(--primary-light);
+  outline: none;
+}
+
+.squad-chat__input-area button {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0 24px;
+  font-weight: 750;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.squad-chat__input-area button:hover {
+  box-shadow: var(--shadow-glow);
+}
+

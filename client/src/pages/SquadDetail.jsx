@@ -7,13 +7,18 @@ import toast from "react-hot-toast";
 import "./SquadDetail.css";
 
 function SquadDetail() {
-  const { squadId } = useParams();
+  const squadId = useParams().squadId;
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [squadData, setSquadData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+
+  // Chat coordination states
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -37,6 +42,63 @@ function SquadDetail() {
       navigate("/events");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Check if current user is member
+  const isMember = squadData?.members?.some((m) => m.user?.id === user?.id) || false;
+
+  useEffect(() => {
+    if (!isMember) return;
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 3000);
+    return () => clearInterval(interval);
+  }, [squadId, isMember]);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await api.get(`/squads/${squadId}/messages`);
+      if (res.data?.success) {
+        setMessages(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to load messages:", err);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim() || sendingMsg) return;
+
+    try {
+      setSendingMsg(true);
+      const res = await api.post(`/squads/${squadId}/messages`, {
+        message: newMessage,
+      });
+      if (res.data?.success) {
+        setNewMessage("");
+        fetchMessages();
+      }
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      toast.error("Failed to send message");
+    } finally {
+      setSendingMsg(false);
+    }
+  };
+
+  const handleTogglePin = async (messageId, isPinned) => {
+    try {
+      const res = await api.put(`/squads/${squadId}/messages/${messageId}/pin`, {
+        is_pinned: !isPinned,
+      });
+      if (res.data?.success) {
+        toast.success(!isPinned ? "Announced to crew! 📌" : "Announcement unpinned.");
+        fetchMessages();
+      }
+    } catch (err) {
+      console.error("Pin failed:", err);
+      toast.error(err.response?.data?.error || "Failed to pin message");
     }
   };
 
@@ -97,8 +159,8 @@ function SquadDetail() {
   const event = squad.event || {};
   const venue = event.venue || {};
   
-  // Verify if current user is member
-  const isMember = members.some((m) => m.user?.id === user.id);
+  // Member state already computed
+  const pinnedMessage = messages.find((m) => m.is_pinned);
 
   return (
     <div className="squad-detail-page">
@@ -122,62 +184,151 @@ function SquadDetail() {
           )}
         </header>
 
+        {/* Pinned Coordination Announcement */}
+        {pinnedMessage && (
+          <div className="squad-announcement-bar" style={{ marginBottom: "28px", background: "rgba(124, 92, 252, 0.06)", border: "1px solid rgba(124, 92, 252, 0.2)", borderRadius: "16px", padding: "18px 24px", textAlign: "left" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <span style={{ fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", color: "var(--primary-light)", letterSpacing: "1px", display: "flex", alignItems: "center", gap: "6px" }}>
+                📌 Crew Announcement
+              </span>
+              <span style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>
+                by {pinnedMessage.user?.full_name || "Leader"}
+              </span>
+            </div>
+            <p style={{ margin: 0, fontSize: "0.95rem", color: "white", fontStyle: "italic", lineHeight: 1.5 }}>
+              "{pinnedMessage.message}"
+            </p>
+          </div>
+        )}
+
         {/* Grid Workspace */}
         <div className="squad-grid">
-          {/* Left Checklist */}
-          <div className="squad-card">
-            <h2 className="squad-card__heading">
-              <HiUserGroup style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--primary-light)" }} />
-              Who's Coming ({members.length})
-            </h2>
+          {/* Left Column Stack */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+            {/* Left Checklist */}
+            <div className="squad-card">
+              <h2 className="squad-card__heading">
+                <HiUserGroup style={{ display: "inline", verticalAlign: "middle", marginRight: 8, color: "var(--primary-light)" }} />
+                Who's Coming ({members.length})
+              </h2>
 
-            <div className="squad-members-list">
-              {members.map((member) => (
-                <div key={member.id} className="squad-member-row">
-                  <div className="squad-member-row__info">
-                    <div className="squad-member-row__avatar">
-                      {member.user?.avatar_url ? (
-                        <img src={member.user.avatar_url} alt={member.user.full_name} />
-                      ) : (
-                        member.user?.full_name?.[0]?.toUpperCase() || "?"
-                      )}
+              <div className="squad-members-list">
+                {members.map((member) => (
+                  <div key={member.id} className="squad-member-row">
+                    <div className="squad-member-row__info">
+                      <div className="squad-member-row__avatar">
+                        {member.user?.avatar_url ? (
+                          <img src={member.user.avatar_url} alt={member.user.full_name} />
+                        ) : (
+                          member.user?.full_name?.[0]?.toUpperCase() || "?"
+                        )}
+                      </div>
+                      <div>
+                        <span className="squad-member-row__name">
+                          {member.user?.full_name || "Friend"}
+                        </span>
+                        {squad.leader_id === member.user?.id && (
+                          <span style={{ fontSize: "0.7rem", color: "var(--primary-light)", marginLeft: "8px", fontWeight: 700 }}>Host</span>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className="squad-member-row__name">
-                        {member.user?.full_name || "Friend"}
+
+                    {member.has_booked ? (
+                      <span className="squad-member-row__badge squad-member-row__badge--booked">
+                        <HiCheck /> Ticket Booked
                       </span>
-                      {squad.leader_id === member.user?.id && (
-                        <span style={{ fontSize: "0.7rem", color: "var(--primary-light)", marginLeft: "8px", fontWeight: 700 }}>Host</span>
-                      )}
-                    </div>
+                    ) : (
+                      <span className="squad-member-row__badge squad-member-row__badge--pending">
+                        <HiExclamationTriangle /> Pending RSVP
+                      </span>
+                    )}
                   </div>
+                ))}
+              </div>
 
-                  {member.has_booked ? (
-                    <span className="squad-member-row__badge squad-member-row__badge--booked">
-                      <HiCheck /> Ticket Booked
-                    </span>
-                  ) : (
-                    <span className="squad-member-row__badge squad-member-row__badge--pending">
-                      <HiExclamationTriangle /> Pending RSVP
-                    </span>
-                  )}
+              {/* Quick RSVP CTA if user is in squad but hasn't booked passes yet */}
+              {isMember && !members.find(m => m.user?.id === user.id)?.has_booked && (
+                <div style={{ marginTop: "24px", padding: "20px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "12px", textAlign: "center" }}>
+                  <p style={{ margin: "0 0 14px 0", fontSize: "0.88rem", color: "rgba(255,255,255,0.9)" }}>
+                    You haven't booked your pass for this event yet! Lock in your ticket now to join the crew.
+                  </p>
+                  <Link
+                    to={`/events/${event.id}`}
+                    className="ed-pricing__book-btn"
+                    style={{ textDecoration: "none", display: "inline-flex", width: "auto", padding: "10px 24px" }}
+                  >
+                    Book My Pass
+                  </Link>
                 </div>
-              ))}
+              )}
             </div>
 
-            {/* Quick RSVP CTA if user is in squad but hasn't booked passes yet */}
-            {isMember && !members.find(m => m.user?.id === user.id)?.has_booked && (
-              <div style={{ marginTop: "24px", padding: "20px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "12px", textAlign: "center" }}>
-                <p style={{ margin: "0 0 14px 0", fontSize: "0.88rem", color: "rgba(255,255,255,0.9)" }}>
-                  You haven't booked your pass for this event yet! Lock in your ticket now to join the crew.
-                </p>
-                <Link
-                  to={`/events/${event.id}`}
-                  className="ed-pricing__book-btn"
-                  style={{ textDecoration: "none", display: "inline-flex", width: "auto", padding: "10px 24px" }}
-                >
-                  Book My Pass
-                </Link>
+            {/* Crew Chat Room */}
+            {isMember && (
+              <div className="squad-card squad-chat-card">
+                <h2 className="squad-card__heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>💬 Crew Chat Room</span>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "hsl(var(--muted))" }}>Auto-refreshing</span>
+                </h2>
+
+                <div className="squad-chat__window">
+                  {messages.length === 0 ? (
+                    <div className="squad-chat__empty">
+                      <p>No messages yet. Start coordinating meetups or travel plans!</p>
+                    </div>
+                  ) : (
+                    <div className="squad-chat__list">
+                      {messages.map((msg) => {
+                        const isSelf = msg.user_id === user?.id;
+                        const isLeader = msg.user_id === squad.leader_id;
+                        return (
+                          <div key={msg.id} className={`squad-chat__item ${isSelf ? "squad-chat__item--self" : ""}`}>
+                            <div className="squad-chat__meta">
+                              <span className="squad-chat__sender">{msg.user?.full_name || "Friend"}</span>
+                              {isLeader && <span className="squad-chat__leader-badge">Host 👑</span>}
+                              {msg.is_pinned && <span className="squad-chat__pin-badge">Pinned 📌</span>}
+                            </div>
+                            
+                            <div className="squad-chat__bubble-row">
+                              <div className="squad-chat__bubble">
+                                {msg.message}
+                              </div>
+                              
+                              {user?.id === squad.leader_id && (
+                                <button
+                                  type="button"
+                                  className={`squad-chat__pin-btn ${msg.is_pinned ? "active" : ""}`}
+                                  onClick={() => handleTogglePin(msg.id, msg.is_pinned)}
+                                  title={msg.is_pinned ? "Unpin Announcement" : "Pin as announcement"}
+                                >
+                                  📌
+                                </button>
+                              )}
+                            </div>
+                            
+                            <span className="squad-chat__time">
+                              {new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <form onSubmit={handleSendMessage} className="squad-chat__input-area">
+                  <input
+                    type="text"
+                    placeholder="Type a message to coordinate plans..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    maxLength={500}
+                    required
+                  />
+                  <button type="submit" disabled={sendingMsg}>
+                    Send
+                  </button>
+                </form>
               </div>
             )}
           </div>

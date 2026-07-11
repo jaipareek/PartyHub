@@ -10,6 +10,7 @@ function AdminDashboard() {
   const navigate = useNavigate();
   
   const [venues, setVenues] = useState([]);
+  const [pendingStudents, setPendingStudents] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState("pending");
 
@@ -27,19 +28,23 @@ function AdminDashboard() {
       return;
     }
 
-    fetchVenues();
+    fetchVenuesAndStudents();
   }, [user, profile, loading, navigate]);
 
-  const fetchVenues = async () => {
+  const fetchVenuesAndStudents = async () => {
     try {
       setFetching(true);
-      const res = await api.get("/admin/venues");
-      if (res.data?.success) {
-        setVenues(res.data.data);
+      const venuesRes = await api.get("/admin/venues");
+      if (venuesRes.data?.success) {
+        setVenues(venuesRes.data.data);
+      }
+      const studentsRes = await api.get("/admin/students");
+      if (studentsRes.data?.success) {
+        setPendingStudents(studentsRes.data.data);
       }
     } catch (err) {
-      console.error("Failed to fetch venues:", err);
-      toast.error("Could not load venues list");
+      console.error("Failed to fetch admin data:", err);
+      toast.error("Could not load admin listings");
     } finally {
       setFetching(false);
     }
@@ -64,6 +69,25 @@ function AdminDashboard() {
     } catch (err) {
       console.error("Verification update failed:", err);
       toast.error("Failed to update verification status", { id: toastId });
+    }
+  };
+
+  const handleVerifyStudent = async (profileId, status) => {
+    const toastId = toast.loading(status === "approved" ? "Approving student..." : "Rejecting request...");
+    
+    try {
+      const res = await api.put(`/admin/students/${profileId}/verify`, {
+        status,
+      });
+
+      if (res.data?.success) {
+        toast.success(status === "approved" ? "Student approved successfully! 🎓" : "Verification request rejected.", { id: toastId });
+        // Update local state
+        setPendingStudents((prev) => prev.filter((s) => s.id !== profileId));
+      }
+    } catch (err) {
+      console.error("Student verification failed:", err);
+      toast.error("Failed to update student status", { id: toastId });
     }
   };
 
@@ -95,18 +119,90 @@ function AdminDashboard() {
             className={`admin-dashboard__tab ${activeTab === "pending" ? "active" : ""}`}
             onClick={() => setActiveTab("pending")}
           >
-            Pending Approval ({venues.filter((v) => !v.is_verified).length})
+            Pending Venues ({venues.filter((v) => !v.is_verified).length})
           </button>
           <button
             className={`admin-dashboard__tab ${activeTab === "verified" ? "active" : ""}`}
             onClick={() => setActiveTab("verified")}
           >
-            Verified Partners ({venues.filter((v) => v.is_verified).length})
+            Verified Venues ({venues.filter((v) => v.is_verified).length})
+          </button>
+          <button
+            className={`admin-dashboard__tab ${activeTab === "students" ? "active" : ""}`}
+            onClick={() => setActiveTab("students")}
+          >
+            Student Reviews ({pendingStudents.length})
           </button>
         </div>
 
         {/* Grid List */}
-        {filteredVenues.length === 0 ? (
+        {activeTab === "students" ? (
+          pendingStudents.length === 0 ? (
+            <div className="admin-dashboard__empty">
+              <h3>No student verification requests</h3>
+              <p>All student documents have been processed.</p>
+            </div>
+          ) : (
+            <div className="admin-dashboard__grid">
+              {pendingStudents.map((student) => (
+                <div key={student.id} className="admin-card">
+                  <h3 className="admin-card__title">{student.full_name}</h3>
+                  
+                  <div className="admin-card__info-group">
+                    <div className="admin-card__info-item">
+                      <span className="admin-card__info-label">Email Address</span>
+                      <span className="admin-card__info-val">{student.email}</span>
+                    </div>
+                    
+                    <div className="admin-card__info-item">
+                      <span className="admin-card__info-label">College / University</span>
+                      <span className="admin-card__info-val">{student.college || "Not declared"}</span>
+                    </div>
+
+                    <div className="admin-card__info-item">
+                      <span className="admin-card__info-label">Student ID Proof</span>
+                      <span className="admin-card__info-val">
+                        {student.student_id_url ? (
+                          <a href={student.student_id_url} target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)", textDecoration: "underline" }}>
+                            View ID Card Scan ↗
+                          </a>
+                        ) : "None provided"}
+                      </span>
+                    </div>
+
+                    <div className="admin-card__info-item">
+                      <span className="admin-card__info-label">Aadhaar Proof</span>
+                      <span className="admin-card__info-val">
+                        {student.aadhar_url ? (
+                          <a href={student.aadhar_url} target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)", textDecoration: "underline" }}>
+                            View Aadhaar Document ↗
+                          </a>
+                        ) : "None provided"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="admin-card__actions" style={{ gap: "10px", marginTop: "20px" }}>
+                    <button
+                      className="admin-btn admin-btn--approve"
+                      style={{ flex: 1 }}
+                      onClick={() => handleVerifyStudent(student.id, "approved")}
+                    >
+                      Approve Student
+                    </button>
+                    <button
+                      className="admin-btn admin-btn--revoke"
+                      style={{ flex: 1 }}
+                      onClick={() => handleVerifyStudent(student.id, "rejected")}
+                    >
+                      Reject Request
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filteredVenues.length === 0 ? (
           <div className="admin-dashboard__empty">
             <h3>No venues found</h3>
             <p>There are currently no venues in this category.</p>
