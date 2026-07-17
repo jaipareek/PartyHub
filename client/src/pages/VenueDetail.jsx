@@ -58,6 +58,29 @@ const AMENITY_ICONS = {
   "Private Rooms": "🚪",
 };
 
+const VENUE_TABLES = [
+  // VIP Booths (Purple / Gold circles)
+  { code: "VIP-1", area: "vip_booth", minSpend: 15000, capacity: 8, cx: 80, cy: 75, r: 24, label: "VIP Lounge Sofa 1" },
+  { code: "VIP-2", area: "vip_booth", minSpend: 15000, capacity: 8, cx: 160, cy: 75, r: 24, label: "VIP Lounge Sofa 2" },
+  { code: "VIP-3", area: "vip_booth", minSpend: 20000, capacity: 10, cx: 240, cy: 75, r: 28, label: "Presidential VIP Sofa" },
+
+  // Main Lounge (Pink/Indigo Rectangles)
+  { code: "L-1", area: "main_lounge", minSpend: 5000, capacity: 4, x: 50, y: 150, width: 44, height: 32, label: "Main Lounge Table 1" },
+  { code: "L-2", area: "main_lounge", minSpend: 5000, capacity: 4, x: 110, y: 150, width: 44, height: 32, label: "Main Lounge Table 2" },
+  { code: "L-3", area: "main_lounge", minSpend: 7500, capacity: 6, x: 170, y: 150, width: 56, height: 32, label: "Main Lounge Table 3" },
+  { code: "L-4", area: "main_lounge", minSpend: 5000, capacity: 4, x: 240, y: 150, width: 44, height: 32, label: "Main Lounge Table 4" },
+
+  // Poolside Deck (Cyan capsule shapes)
+  { code: "POOL-1", area: "poolside", minSpend: 8000, capacity: 4, x: 340, y: 65, width: 36, height: 50, rx: 8, label: "Poolside Deck Cabana 1" },
+  { code: "POOL-2", area: "poolside", minSpend: 8000, capacity: 4, x: 410, y: 65, width: 36, height: 50, rx: 8, label: "Poolside Deck Cabana 2" },
+
+  // Bar Seats (Stools)
+  { code: "BAR-1", area: "bar_seats", minSpend: 2000, capacity: 2, cx: 350, cy: 170, r: 10, label: "Bar Counter Stool 1" },
+  { code: "BAR-2", area: "bar_seats", minSpend: 2000, capacity: 2, cx: 380, cy: 170, r: 10, label: "Bar Counter Stool 2" },
+  { code: "BAR-3", area: "bar_seats", minSpend: 2000, capacity: 2, cx: 410, cy: 170, r: 10, label: "Bar Counter Stool 3" },
+  { code: "BAR-4", area: "bar_seats", minSpend: 2000, capacity: 2, cx: 440, cy: 170, r: 10, label: "Bar Counter Stool 4" },
+];
+
 function VenueDetail() {
   const { user } = useAuth();
   const { id } = useParams();
@@ -101,6 +124,39 @@ function VenueDetail() {
   const [reserveRequests, setReserveRequests] = useState("");
   const [submittingReservation, setSubmittingReservation] = useState(false);
 
+  // Table reservation selection states
+  const [tableCode, setTableCode] = useState("");
+  const [bookedTables, setBookedTables] = useState([]);
+
+  // Live Vibe Check state
+  const [liveVibe, setLiveVibe] = useState({
+    densityPercent: 25,
+    crowdLabel: "Moderate",
+    vibeLabel: "Chill 🍷",
+    energyLabel: "Chill Vibe 🛋️",
+    votesCount: 0
+  });
+
+  // Fetch booked table status for date
+  useEffect(() => {
+    if (id && reserveDate) {
+      fetchBookedTables();
+    } else {
+      setBookedTables([]);
+    }
+  }, [id, reserveDate]);
+
+  const fetchBookedTables = async () => {
+    try {
+      const res = await api.get(`/table-reservations/venue/${id}/booked-tables?date=${reserveDate}`);
+      if (res.data?.success) {
+        setBookedTables(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error loading booked tables list:", err);
+    }
+  };
+
   const handleReserveSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -114,6 +170,11 @@ function VenueDetail() {
       return;
     }
 
+    if (!tableCode) {
+      toast.error("Please click and select an available table on the floor layout plan!");
+      return;
+    }
+
     try {
       setSubmittingReservation(true);
       const res = await api.post("/table-reservations", {
@@ -123,17 +184,19 @@ function VenueDetail() {
         guest_count: reserveGuests,
         seating_area: reserveArea,
         occasion: reserveOccasion,
-        special_requests: reserveRequests
+        special_requests: reserveRequests,
+        table_code: tableCode
       });
 
       if (res.data?.success) {
-        toast.success("Table reservation requested! 🍽️ Check your notifications for status updates.");
+        toast.success(`Table ${tableCode} reservation requested! 🍽️`);
         setReserveModalOpen(false);
         // Reset form
         setReserveDate("");
         setReserveTime("20:00");
         setReserveGuests(2);
         setReserveArea("main_lounge");
+        setTableCode("");
         setReserveOccasion("dinner");
         setReserveRequests("");
       }
@@ -158,6 +221,12 @@ function VenueDetail() {
         if (reviewsRes.data?.success) {
           setReviews(reviewsRes.data.data);
           setReviewStats(reviewsRes.data.stats);
+        }
+
+        // Fetch live vibe checks
+        const liveRes = await api.get(`/venues/${id}/live-vibe`);
+        if (liveRes.data?.success) {
+          setLiveVibe(liveRes.data.data);
         }
 
         // Check eligibility
@@ -259,21 +328,18 @@ function VenueDetail() {
     });
   };
 
-  // AfterMeter Crowd Density calculations (Deterministic simulation based on name)
+  // AfterMeter Crowd Density calculations (Live Vibe checked-in updates)
   const capacityNum = venue.capacity || 1500;
-  const densityPercent = ((venue.name.length * 7) % 50) + 35; // ranges between 35% and 85%
+  const densityPercent = liveVibe.densityPercent;
   const currentCrowd = Math.round((densityPercent / 100) * capacityNum);
+  const densityLabel = liveVibe.crowdLabel;
   
-  let densityLabel = "Moderate";
   let densityColor = "#f59e0b"; // Amber
   if (densityPercent < 45) {
-    densityLabel = "Low";
     densityColor = "#10b981"; // Green
   } else if (densityPercent >= 75) {
-    densityLabel = "Full";
     densityColor = "#ef4444"; // Red
   } else if (densityPercent >= 60) {
-    densityLabel = "Busy";
     densityColor = "#f97316"; // Orange
   }
 
@@ -403,10 +469,16 @@ function VenueDetail() {
                   <span>Full</span>
                 </div>
 
-                <div className="vd-aftermeter__footer">
+                <div className="vd-aftermeter__footer" style={{ flexWrap: "wrap", gap: "8px" }}>
                   <span>Crowd Now: <strong>{currentCrowd} People</strong></span>
+                  <span>Vibe: <strong>{liveVibe.vibeLabel}</strong> ({liveVibe.energyLabel})</span>
                   <span>Total Capacity: <strong>{capacityNum}</strong></span>
                 </div>
+                {liveVibe.votesCount > 0 && (
+                  <div style={{ fontSize: "0.68rem", color: "hsl(var(--muted))", marginTop: "6px", textAlign: "left" }}>
+                    ⚡ Based on {liveVibe.votesCount} live crowd report{liveVibe.votesCount !== 1 ? "s" : ""} in the last 4 hours
+                  </div>
+                )}
               </div>
 
             </div>
@@ -742,7 +814,7 @@ function VenueDetail() {
                 </div>
 
                 <div className="ed-card-row">
-                  <div className="create-event__field">
+                  <div className="create-event__field" style={{ flex: 1 }}>
                     <label className="vd-form-lbl">Occasion</label>
                     <select 
                       value={reserveOccasion}
@@ -758,23 +830,131 @@ function VenueDetail() {
                       <option value="other">Other Occasion 🌟</option>
                     </select>
                   </div>
-                  <div className="create-event__field">
+                  <div className="create-event__field" style={{ flex: 1 }}>
                     <label className="vd-form-lbl">Seating Area</label>
-                    <select 
-                      value={reserveArea}
-                      onChange={(e) => setReserveArea(e.target.value)}
-                      style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
-                    >
-                      <option value="main_lounge">Main Lounge 🛋️</option>
-                      <option value="rooftop">Rooftop Area 🌃</option>
-                      <option value="vip_booth">VIP Booth 👑</option>
-                      <option value="poolside">Poolside Deck 🌊</option>
-                      <option value="bar_seats">High Bar Seats 🍸</option>
-                    </select>
+                    <input 
+                      type="text" 
+                      value={reserveArea.replace("_", " ").toUpperCase()} 
+                      disabled
+                      style={{ width: "100%", background: "#111116", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "hsl(var(--muted))", textTransform: "capitalize", cursor: "not-allowed" }}
+                    />
                   </div>
                 </div>
 
-                <div className="create-event__field">
+                {/* 🗺️ INTERACTIVE FLOOR MAP */}
+                <div className="create-event__field" style={{ marginTop: "20px" }}>
+                  <label className="vd-form-lbl">Select Table on Floor Map</label>
+                  {!reserveDate ? (
+                    <div style={{ background: "#1a1a24", border: "1px dashed var(--border)", borderRadius: "12px", padding: "30px", textAlign: "center", color: "hsl(var(--muted))" }}>
+                      📅 Please select a Reservation Date first to view table availability.
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: "0.78rem", color: "hsl(var(--muted))", marginBottom: "12px", textAlign: "left" }}>
+                        Click on an available table (Green) to select it. Red tables are already booked.
+                      </p>
+                      
+                      {/* SVG Canvas */}
+                      <div className="floor-map-wrapper" style={{ background: "#0c0c12", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px", display: "flex", justifyContent: "center" }}>
+                        <svg 
+                          viewBox="0 0 500 230" 
+                          style={{ width: "100%", maxHeight: "250px", overflow: "visible" }}
+                        >
+                          {/* Floor Zones borders */}
+                          <rect x="10" y="10" width="310" height="210" rx="8" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="2" strokeDasharray="4 4" />
+                          <text x="20" y="30" fill="rgba(255,255,255,0.15)" fontSize="10" fontWeight="700" letterSpacing="1">LOUNGE & VIP ZONE</text>
+                          
+                          <rect x="330" y="10" width="160" height="210" rx="8" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="2" strokeDasharray="4 4" />
+                          <text x="340" y="30" fill="rgba(255,255,255,0.15)" fontSize="10" fontWeight="700" letterSpacing="1">POOL & BAR</text>
+
+                          {/* Render Tables */}
+                          {VENUE_TABLES.map((t) => {
+                            const isBooked = bookedTables.includes(t.code);
+                            const isSelected = tableCode === t.code;
+                            
+                            // Colors
+                            let strokeColor = "rgba(255,255,255,0.1)";
+                            let fillColor = "rgba(255,255,255,0.02)";
+                            if (isBooked) {
+                              strokeColor = "#ef4444";
+                              fillColor = "rgba(239, 68, 68, 0.15)";
+                            } else if (isSelected) {
+                              strokeColor = "#f59e0b";
+                              fillColor = "rgba(245, 158, 11, 0.35)";
+                            } else {
+                              strokeColor = "#10b981";
+                              fillColor = "rgba(16, 185, 129, 0.1)";
+                            }
+
+                            const handleTableClick = () => {
+                              if (isBooked) return;
+                              setTableCode(t.code);
+                              setReserveArea(t.area);
+                              setReserveGuests(t.capacity);
+                            };
+
+                            const commonProps = {
+                              onClick: handleTableClick,
+                              stroke: strokeColor,
+                              strokeWidth: isSelected ? "3" : "1.5",
+                              fill: fillColor,
+                              style: { 
+                                cursor: isBooked ? "not-allowed" : "pointer", 
+                                transition: "all 0.15s ease",
+                                filter: isSelected ? "drop-shadow(0 0 6px rgba(245, 158, 11, 0.4))" : "none"
+                              }
+                            };
+
+                            return (
+                              <g key={t.code} style={{ pointerEvents: "auto" }}>
+                                {/* Circle table (VIP, Bar Stools) */}
+                                {t.cx !== undefined ? (
+                                  <circle cx={t.cx} cy={t.cy} r={t.r} {...commonProps} />
+                                ) : (
+                                  /* Rectangle table (Lounge, Poolside) */
+                                  <rect x={t.x} y={t.y} width={t.width} height={t.height} rx={t.rx || 0} {...commonProps} />
+                                )}
+                                
+                                {/* Label Text inside table */}
+                                <text 
+                                  x={t.cx !== undefined ? t.cx : t.x + t.width / 2} 
+                                  y={t.cy !== undefined ? t.cy + 3 : t.y + t.height / 2 + 3} 
+                                  fill="white" 
+                                  fontSize="9" 
+                                  fontWeight="800" 
+                                  textAnchor="middle"
+                                  style={{ pointerEvents: "none", opacity: isBooked ? 0.4 : 1 }}
+                                >
+                                  {t.code}
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      {/* Selection details banner */}
+                      {tableCode ? (
+                        <div style={{ background: "rgba(245, 158, 11, 0.08)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "8px", padding: "12px", marginTop: "12px", display: "flex", justifyContent: "space-between", fontSize: "0.82rem", textAlign: "left" }}>
+                          <div>
+                            <span style={{ color: "#f59e0b", fontWeight: 700, display: "block" }}>🎯 Selected Table: {tableCode}</span>
+                            <span style={{ color: "hsl(var(--muted))" }}>Seating: {VENUE_TABLES.find(v => v.code === tableCode)?.label}</span>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <span style={{ color: "white", fontWeight: 700, display: "block" }}>Min Spend: ₹{VENUE_TABLES.find(v => v.code === tableCode)?.minSpend.toLocaleString()}</span>
+                            <span style={{ color: "hsl(var(--muted))" }}>Capacity: Max {VENUE_TABLES.find(v => v.code === tableCode)?.capacity} guests</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px dashed var(--border)", borderRadius: "8px", padding: "12px", marginTop: "12px", fontSize: "0.8rem", textAlign: "center", color: "hsl(var(--muted))" }}>
+                          👉 Click a green table on the layout above to select it.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="create-event__field" style={{ marginTop: "16px" }}>
                   <label className="vd-form-lbl">Number of Guests</label>
                   <div className="ed-qty-controls" style={{ width: "fit-content", background: "#1a1a24", border: "1px solid var(--border)", padding: "8px 16px", borderRadius: "12px", marginTop: "4px" }}>
                     <button 

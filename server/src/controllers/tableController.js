@@ -6,11 +6,11 @@ import supabase from "../config/supabase.js";
 // POST /api/table-reservations — Request a new table reservation
 export const createReservation = async (req, res) => {
   try {
-    const { venue_id, reservation_date, reservation_time, guest_count, seating_area, occasion, special_requests } = req.body;
+    const { venue_id, reservation_date, reservation_time, guest_count, seating_area, occasion, special_requests, table_code } = req.body;
     const userId = req.user.id;
 
-    if (!venue_id || !reservation_date || !reservation_time || !guest_count || !seating_area || !occasion) {
-      return res.status(400).json({ success: false, error: "Missing required reservation details" });
+    if (!venue_id || !reservation_date || !reservation_time || !guest_count || !seating_area || !occasion || !table_code) {
+      return res.status(400).json({ success: false, error: "Missing required reservation details, including table seating selection" });
     }
 
     // 1. Verify venue exists and is verified
@@ -24,7 +24,23 @@ export const createReservation = async (req, res) => {
       return res.status(404).json({ success: false, error: "Venue not found" });
     }
 
-    // 2. Insert reservation
+    // 2. Prevent double-booking for specific table on same date
+    const { data: existing, error: existErr } = await supabase
+      .from("table_reservations")
+      .select("id")
+      .eq("venue_id", venue_id)
+      .eq("reservation_date", reservation_date)
+      .eq("table_code", table_code)
+      .in("status", ["pending", "confirmed"])
+      .limit(1);
+
+    if (existErr) throw existErr;
+
+    if (existing && existing.length > 0) {
+      return res.status(400).json({ success: false, error: "This table is already reserved or pending verification for this date! Please choose another table." });
+    }
+
+    // 3. Insert reservation
     const { data: reservation, error: reserveErr } = await supabase
       .from("table_reservations")
       .insert({
@@ -36,6 +52,7 @@ export const createReservation = async (req, res) => {
         seating_area,
         occasion,
         special_requests,
+        table_code,
         status: "pending"
       })
       .select()
@@ -50,11 +67,11 @@ export const createReservation = async (req, res) => {
       .eq("id", userId)
       .single();
 
-    // 3. Notify the venue owner
+    // 4. Notify the venue owner
     await supabase.from("notifications").insert({
       user_id: venue.owner_id,
       title: "New Table Request! 🍽️",
-      message: `${profile?.full_name || "A guest"} requested a table for ${guest_count} guests on ${reservation_date} at ${reservation_time.slice(0, 5)}.`,
+      message: `${profile?.full_name || "A guest"} requested Table ${table_code} for ${guest_count} guests on ${reservation_date} at ${reservation_time.slice(0, 5)}.`,
       type: "booking",
       related_id: reservation.id,
       related_type: "table_reservation"
@@ -62,7 +79,7 @@ export const createReservation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Table reservation request submitted! 🍽️",
+      message: `Table ${table_code} reservation request submitted! 🍽️`,
       data: reservation
     });
   } catch (error) {
@@ -202,6 +219,37 @@ export const updateReservationStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating reservation status:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// GET /api/table-reservations/venue/:venueId/booked-tables — Fetch list of already reserved table codes
+export const getBookedTables = async (req, res) => {
+  try {
+    const { venueId } = req.params;
+    const { date } = req.query;
+
+    if (!date) {
+      return res.status(400).json({ success: false, error: "Date parameter is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("table_reservations")
+      .select("table_code")
+      .eq("venue_id", venueId)
+      .eq("reservation_date", date)
+      .in("status", ["pending", "confirmed"]);
+
+    if (error) throw error;
+
+    const bookedCodes = (data || []).map((r) => r.table_code).filter(Boolean);
+
+    res.status(200).json({
+      success: true,
+      data: bookedCodes
+    });
+  } catch (error) {
+    console.error("Error getting booked tables list:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 };

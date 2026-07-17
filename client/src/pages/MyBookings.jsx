@@ -229,7 +229,7 @@ function MyBookings() {
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", padding: "12px 16px", background: "#1a1a24", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", padding: "12px 16px", background: "#1a1a24", borderRadius: "8px", border: "1px solid var(--border)" }}>
                           <div style={{ fontSize: "0.82rem" }}>
                             <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Guests</span>
                             <strong>{reserve.guest_count} Guest{reserve.guest_count > 1 ? "s" : ""}</strong>
@@ -238,6 +238,12 @@ function MyBookings() {
                             <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Preferred Area</span>
                             <strong style={{ textTransform: "capitalize" }}>{reserve.seating_area?.replace("_", " ")}</strong>
                           </div>
+                          {reserve.table_code && (
+                            <div style={{ fontSize: "0.82rem" }}>
+                              <span style={{ color: "#f59e0b", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Table Code</span>
+                              <strong style={{ color: "#f59e0b" }}>{reserve.table_code}</strong>
+                            </div>
+                          )}
                         </div>
 
                         {reserve.special_requests && (

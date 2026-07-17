@@ -104,6 +104,14 @@ function Home() {
   const heroRef = useRef(null);
   const marqueeRef = useRef(null);
 
+  // Vibe Check modal states
+  const [vibeModalOpen, setVibeModalOpen] = useState(false);
+  const [selectedVibeVenue, setSelectedVibeVenue] = useState(null);
+  const [vibeType, setVibeType] = useState("techno");
+  const [vibeCrowd, setVibeCrowd] = useState("busy");
+  const [vibeEnergy, setVibeEnergy] = useState("high");
+  const [submittingVibe, setSubmittingVibe] = useState(false);
+
   // Cycle hero roles
   useEffect(() => {
     const interval = setInterval(() => {
@@ -208,7 +216,7 @@ function Home() {
         api.get("/events/student-deals"),
       ]);
 
-      if (bookingsRes.data?.success) setMyBookings(bookingsRes.data.data.slice(0, 2));
+      if (bookingsRes.data?.success) setMyBookings(bookingsRes.data.data);
       if (squadsRes.data?.success) setMySquads(squadsRes.data.data.slice(0, 3));
       if (tonightRes.data?.success) setTonightEvents(tonightRes.data.data.slice(0, 3));
       if (dealsRes.data?.success) setDealsEvents(dealsRes.data.data.slice(0, 3));
@@ -274,6 +282,32 @@ function Home() {
     } catch (err) {
       console.error("Matchmaker squad creation failed:", err);
       toast.error(err.response?.data?.error || "Could not launch squad");
+    }
+  };
+
+  const handleVibeSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedVibeVenue) return;
+
+    try {
+      setSubmittingVibe(true);
+      const res = await api.post(`/venues/${selectedVibeVenue.id}/vibe-check`, {
+        vibe_type: vibeType,
+        crowd_status: vibeCrowd,
+        energy_level: vibeEnergy
+      });
+
+      if (res.data?.success) {
+        toast.success("Live vibe check recorded! ⚡ Check the venue's AfterMeter to see updates.");
+        setVibeModalOpen(false);
+        // Refresh dashboard data
+        fetchDashboardData();
+      }
+    } catch (err) {
+      console.error("Vibe check submit error:", err);
+      toast.error(err.response?.data?.error || "Failed to submit vibe check");
+    } finally {
+      setSubmittingVibe(false);
     }
   };
 
@@ -492,6 +526,34 @@ function Home() {
         // 3. PERSONALIZED LOGGED-IN CUSTOMER VIBE HUB
         <div className="home-dashboard">
           
+          {/* Live Vibe Check Survey Alert Card */}
+          {myBookings.find(b => b.status === "checked_in") && (
+            <div className="venue-warning-banner animate-role-fade-in" style={{ background: "rgba(125, 92, 252, 0.1)", border: "1px solid rgba(125, 92, 252, 0.3)", color: "white", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+              <div style={{ display: "flex", gap: "14px", alignItems: "center", textAlign: "left" }}>
+                <span style={{ fontSize: "1.7rem", filter: "drop-shadow(0 0 8px rgba(125,92,252,0.4))" }}>⚡</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "1rem", color: "white", fontWeight: 800 }}>
+                    You are checked-in at {myBookings.find(b => b.status === "checked_in").event?.venue?.name || "the club"}!
+                  </h3>
+                  <p style={{ margin: "3px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.82rem" }}>
+                    How's the crowd, sound volume, and general atmosphere at the scene right now?
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  const check = myBookings.find(b => b.status === "checked_in");
+                  setSelectedVibeVenue(check?.event?.venue);
+                  setVibeModalOpen(true);
+                }}
+                className="guestlist-checkin-btn"
+                style={{ width: "auto", padding: "8px 18px", fontSize: "0.8rem" }}
+              >
+                Report Atmosphere Vibe
+              </button>
+            </div>
+          )}
+          
           {/* Greeting Header */}
           <div className="home-greeting">
             <div className="greeting-text">
@@ -531,7 +593,7 @@ function Home() {
                   </div>
                 ) : (
                   <div className="passes-mini-list">
-                    {myBookings.map((booking) => {
+                    {myBookings.slice(0, 2).map((booking) => {
                       const event = booking.event || {};
                       return (
                         <div key={booking.id} className="pass-mini-card">
@@ -829,6 +891,79 @@ function Home() {
           </div>
         </div>
       </footer>
+
+      {/* 5. VIBE SURVEY MODAL OVERLAY */}
+      {vibeModalOpen && selectedVibeVenue && (
+        <div className="ed-modal-overlay" onClick={() => setVibeModalOpen(false)}>
+          <div className="ed-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="ed-modal-header">
+              <h2>Atmosphere Vibe Check — {selectedVibeVenue.name}</h2>
+              <button className="ed-modal-close" onClick={() => setVibeModalOpen(false)}>&times;</button>
+            </div>
+
+            <form onSubmit={handleVibeSubmit} className="ed-checkout-form">
+              <div className="ed-card-fields">
+                
+                {/* Vibe Music Genre Select */}
+                <div className="create-event__field">
+                  <label className="vd-form-lbl">What style of music is playing?</label>
+                  <select 
+                    value={vibeType}
+                    onChange={(e) => setVibeType(e.target.value)}
+                    style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
+                  >
+                    <option value="techno">Techno / House 🍾</option>
+                    <option value="bollywood">Bollywood Remixes 💃</option>
+                    <option value="hiphop">Hip-Hop & Rap 🎤</option>
+                    <option value="chill">Chillout Lounge 🍷</option>
+                    <option value="pop">Pop Charts / EDM Hits 🎸</option>
+                    <option value="live_band">Live Acoustic Band 🎸</option>
+                  </select>
+                </div>
+
+                {/* Crowd Density Select */}
+                <div className="create-event__field" style={{ marginTop: "16px" }}>
+                  <label className="vd-form-lbl">How packed is the dancefloor/lounge?</label>
+                  <select 
+                    value={vibeCrowd}
+                    onChange={(e) => setVibeCrowd(e.target.value)}
+                    style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
+                  >
+                    <option value="empty">Pretty Empty 🍃</option>
+                    <option value="cozy">Cozy & Relaxed 🛋️</option>
+                    <option value="busy">Busy & Active 🕺</option>
+                    <option value="packed">Completely Packed 🔥</option>
+                  </select>
+                </div>
+
+                {/* Energy Levels Select */}
+                <div className="create-event__field" style={{ marginTop: "16px" }}>
+                  <label className="vd-form-lbl">What's the energy status?</label>
+                  <select 
+                    value={vibeEnergy}
+                    onChange={(e) => setVibeEnergy(e.target.value)}
+                    style={{ width: "100%", background: "#1a1a24", border: "1px solid var(--border)", borderRadius: "8px", padding: "10px 14px", color: "white" }}
+                  >
+                    <option value="high">High Energy (Wild Night) 🔥</option>
+                    <option value="medium">Medium Energy (Active) 🍷</option>
+                    <option value="chill">Chill Vibe (Relaxing) 🛋️</option>
+                  </select>
+                </div>
+
+              </div>
+
+              <button 
+                type="submit" 
+                className="ed-book-btn" 
+                disabled={submittingVibe}
+                style={{ background: "linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%)", boxShadow: "0 0 20px rgba(125, 92, 252, 0.25)" }}
+              >
+                {submittingVibe ? "Recording Vibe..." : "Broadcast Live Vibe Check ⚡"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

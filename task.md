@@ -1,12 +1,15 @@
-# Partner Profile Redesign — Task Tracker
+# Bouncer QR Scanner Portal — Task Tracker
 
-## 1. Frontend Redesign
-- [x] Redesign layout in `MyVenue.jsx` to render high-fidelity split column interface
-- [x] Integrate rounded cover image banner with verified badge overlays
-- [x] Add styled dropdown categories select field for edits
-- [x] Add icon indicators to details: map pin for address, envelope for email, globe for website, phone for contact number
-- [x] Format amenities tags to pull corresponding emoji icons dynamically
-- [x] Align text variables and margins inside `Dashboard.css`
+## 1. Frontend Scanner Component
+- [x] Create `GateScanner.jsx` component inside `client/src/components/dashboard`
+- [x] Implement dynamic unpkg CDN script injection of `html5-qrcode`
+- [x] Implement scanning capture parser (extract pass code from QR links)
+- [x] Implement backend `PUT /owner/check-in/:code` request hooks
+- [x] Build full-screen high-contrast success/warning check-in result overlays
 
-## 2. Verification
-- [x] Confirm client build completes successfully
+## 2. Tab Menu Registration
+- [x] Import and mount `GateScanner` component inside `Dashboard.jsx`
+- [x] Register "Gate Scanner" tab in navigation selectors
+
+## 3. Verification
+- [x] Run production build to confirm code compilations succeed

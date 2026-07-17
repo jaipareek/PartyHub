@@ -6,7 +6,8 @@ import {
   createReservation,
   getMyReservations,
   getVenueReservations,
-  updateReservationStatus
+  updateReservationStatus,
+  getBookedTables
 } from "../controllers/tableController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -18,6 +19,7 @@ router.use(protect);
 router.post("/", createReservation);
 router.get("/my", getMyReservations);
 router.get("/venue/:venueId", getVenueReservations);
+router.get("/venue/:venueId/booked-tables", getBookedTables);
 router.put("/:reservationId/status", updateReservationStatus);
 
 export default router;

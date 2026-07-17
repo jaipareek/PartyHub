@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { HiBuildingStorefront, HiCalendarDays, HiListBullet, HiArrowLeftOnRectangle, HiTicket } from "react-icons/hi2";
+import { HiBuildingStorefront, HiCalendarDays, HiListBullet, HiArrowLeftOnRectangle, HiTicket, HiCamera } from "react-icons/hi2";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import MyVenue from "../components/dashboard/MyVenue";
 import CreateEvent from "../components/dashboard/CreateEvent";
+import AnalyticsHub from "../components/dashboard/AnalyticsHub";
+import GateScanner from "../components/dashboard/GateScanner";
 import api from "../lib/api";
 import toast from "react-hot-toast";
 import "./Dashboard.css";
@@ -21,7 +23,7 @@ function Dashboard() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
-    if (tabParam && ["venue", "create-event", "events", "tables"].includes(tabParam)) {
+    if (tabParam && ["venue", "create-event", "events", "tables", "analytics", "scanner"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location]);
@@ -272,6 +274,20 @@ function Dashboard() {
             <HiTicket style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
             Table Bookings
           </button>
+          <button
+            className={`dashboard-tab ${activeTab === "analytics" ? "active" : ""}`}
+            onClick={() => setActiveTab("analytics")}
+          >
+            <span style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }}>📊</span>
+            Analytics
+          </button>
+          <button
+            className={`dashboard-tab ${activeTab === "scanner" ? "active" : ""}`}
+            onClick={() => setActiveTab("scanner")}
+          >
+            <HiCamera style={{ marginRight: "8px", verticalAlign: "middle", display: "inline" }} />
+            Gate Scanner
+          </button>
         </div>
 
         {activeTab === "venue" && <MyVenue />}
@@ -417,6 +433,12 @@ function Dashboard() {
             )}
           </div>
         )}
+
+        {/* TAB 5: ANALYTICS */}
+        {activeTab === "analytics" && <AnalyticsHub venueId={venueId} />}
+
+        {/* TAB 6: GATE SCANNER */}
+        {activeTab === "scanner" && <GateScanner />}
 
         {/* Guestlist Details Modal */}
         {selectedEvent && (

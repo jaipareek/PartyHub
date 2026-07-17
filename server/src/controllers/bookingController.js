@@ -110,7 +110,7 @@ export const getMyBookings = async (req, res) => {
         *,
         event:events (
           id, title, date, start_time, end_time, poster_url,
-          venue:venues (name, address, city)
+          venue:venues (id, name, address, city)
         )
       `)
       .eq("user_id", req.user.id)
@@ -136,7 +136,7 @@ export const getBookingById = async (req, res) => {
         *,
         event:events (
           id, title, date, start_time, end_time, poster_url,
-          venue:venues (name, address, city)
+          venue:venues (id, name, address, city)
         )
       `)
       .eq("id", id)

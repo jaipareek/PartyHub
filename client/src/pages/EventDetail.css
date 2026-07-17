@@ -735,12 +735,12 @@
 .ed-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(0, 0, 0, 0.9);
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
   z-index: 10000;
-  padding: 20px;
+  padding: 40px 20px;
 }
 
 .ed-modal-content {
@@ -748,9 +748,9 @@
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px;
-  max-width: 480px;
+  max-width: 520px;
   width: 100%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   position: relative;
 }
 

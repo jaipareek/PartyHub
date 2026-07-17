@@ -221,3 +221,24 @@ CREATE INDEX idx_table_reservations_date ON table_reservations(reservation_date)
 CREATE INDEX idx_table_reservations_status ON table_reservations(status);
 
 CREATE TRIGGER update_table_reservations_updated_at BEFORE UPDATE ON table_reservations FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================
+-- 10. LIVE VIBE CHECKS
+-- ============================================
+CREATE TABLE vibe_checks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  venue_id UUID NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+  vibe_type TEXT NOT NULL CHECK (vibe_type IN ('techno', 'bollywood', 'hiphop', 'chill', 'pop', 'live_band')),
+  crowd_status TEXT NOT NULL CHECK (crowd_status IN ('cozy', 'busy', 'packed', 'empty')),
+  energy_level TEXT NOT NULL CHECK (energy_level IN ('high', 'medium', 'chill')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_vibe_checks_venue_id ON vibe_checks(venue_id);
+CREATE INDEX idx_vibe_checks_created_at ON vibe_checks(created_at);
+
+-- ============================================
+-- 11. SEATING SELECTION MIGRATION
+-- ============================================
+ALTER TABLE table_reservations ADD COLUMN table_code TEXT;
