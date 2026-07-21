@@ -273,7 +273,7 @@
 }
 
 .ed-pass-tile.active {
-  border-color: #7d5cfc;
+  border-color: var(--primary);
   background: rgba(125, 92, 252, 0.06);
   box-shadow: 0 0 12px rgba(125, 92, 252, 0.05);
 }
@@ -291,7 +291,7 @@
 }
 
 .ed-pass-tile.active .ed-pass-tile__radio {
-  border-color: #7d5cfc;
+  border-color: var(--primary);
 }
 
 .ed-pass-tile__dot {
@@ -303,7 +303,7 @@
 }
 
 .ed-pass-tile.active .ed-pass-tile__dot {
-  background: #7d5cfc;
+  background: var(--primary);
 }
 
 .ed-pass-tile__info {
@@ -328,7 +328,7 @@
 .ed-pass-tile__price {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #7d5cfc;
+  color: var(--primary);
 }
 
 /* Quantity Control row */
@@ -404,13 +404,13 @@
   gap: 8px;
   padding: 14px 24px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   font-size: 0.95rem;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(125, 92, 252, 0.2);
+  box-shadow: var(--shadow-glow);
   transition: all var(--transition-fast);
 }
 
@@ -515,7 +515,7 @@
 
 .ed-launch-squad-btn:hover {
   background: rgba(125, 92, 252, 0.08);
-  border-color: #7d5cfc;
+  border-color: var(--primary);
   color: white;
 }
 
@@ -536,12 +536,12 @@
 }
 
 .ed-squad-form input:focus {
-  border-color: #7d5cfc;
+  border-color: var(--primary);
   outline: none;
 }
 
 .ed-squad-form button {
-  background: #7d5cfc;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -845,12 +845,12 @@
 }
 
 .ed-card-fields input:focus {
-  border-color: #7d5cfc;
+  border-color: var(--primary);
   outline: none;
 }
 
 .ed-checkout-submit-btn {
-  background: linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%);
+  background: var(--gradient-primary);
   color: white;
   border: none;
   border-radius: var(--radius-full);
@@ -862,7 +862,7 @@
 }
 
 .ed-checkout-submit-btn:hover {
-  box-shadow: 0 0 20px rgba(125, 92, 252, 0.35);
+  box-shadow: var(--shadow-glow), 0 0 30px rgba(255, 0, 127, 0.3);
 }
 
 /* Success panel booking receipt */
@@ -923,15 +923,15 @@
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
-  border: 1px solid #7d5cfc;
-  background: #7d5cfc;
+  border: 1px solid var(--primary);
+  background: var(--primary);
   color: white;
   transition: all var(--transition-fast);
 }
 
 .ed-success-btn:hover {
-  background: #6a49eb;
-  border-color: #6a49eb;
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
 }
 
 .ed-success-btn.secondary {

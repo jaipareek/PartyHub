@@ -92,6 +92,7 @@ function Home() {
   const [tonightEvents, setTonightEvents] = useState([]);
   const [dealsEvents, setDealsEvents] = useState([]);
   const [dashboardLoading, setDashboardLoading] = useState(false);
+  const [publicEvents, setPublicEvents] = useState([]);
 
   // Matchmaker Widget state
   const [matchCategory, setMatchCategory] = useState("club_night");
@@ -157,10 +158,12 @@ function Home() {
     return () => ctx.revert();
   }, []);
 
-  // Load user data if logged in
+  // Load user data if logged in or fetch public teaser events
   useEffect(() => {
     if (isAuthenticated && profile?.role === "customer") {
       fetchDashboardData();
+    } else if (!isAuthenticated) {
+      fetchPublicEvents();
     }
   }, [isAuthenticated, profile]);
 
@@ -225,6 +228,17 @@ function Home() {
       console.error("Error loading home dashboard data:", err);
     } finally {
       setDashboardLoading(false);
+    }
+  };
+
+  const fetchPublicEvents = async () => {
+    try {
+      const res = await api.get("/events");
+      if (res.data?.success) {
+        setPublicEvents(res.data.data.slice(0, 3));
+      }
+    } catch (err) {
+      console.error("Failed to load public events teaser:", err);
     }
   };
 
@@ -335,47 +349,85 @@ function Home() {
   return (
     <div className="afterdark-home">
       {!isAuthenticated ? (
-        <section className="hero" ref={heroRef}>
-          <div className="hero__video-wrap">
-            <HlsVideo className="hero__video" />
-            <div className="hero__overlay" />
-            <div className="hero__fade" />
-          </div>
+        <>
+          <section className="hero" ref={heroRef}>
+            <div className="hero__video-wrap">
+              <HlsVideo className="hero__video" />
+              <div className="hero__overlay" />
+              <div className="hero__fade" />
 
-          <div className="hero__content">
-            <span className="hero__eyebrow blur-in">Your Night, Simplified</span>
-            <h1 className="hero__title name-reveal">
-              After<em>Dark</em>
-            </h1>
-            <p className="hero__role blur-in">
-              A place to{" "}
-              <span key={roleIndex} className="hero__role-word animate-role-fade-in">
-                {HERO_ROLES[roleIndex]}
-              </span>{" "}
-              in your city.
-            </p>
-            <p className="hero__description blur-in">
-              Discover nearby events, book tickets instantly, reserve tables, and
-              plan nights out with your squad — all in one place.
-            </p>
-
-            <div className="hero__cta blur-in">
-              <button className="hero__btn hero__btn--solid" onClick={() => navigate("/signup")}>
-                <HiSparkles /> Get Started
-              </button>
-              <button className="hero__btn hero__btn--outline" onClick={() => navigate("/owner/login")}>
-                I'm a Venue Owner
-              </button>
+              {/* Floating Glassmorphic UI snippets */}
+              <div className="floating-badge floating-badge--1">
+                <span>⚡ Live Vibe: Active</span>
+                <span style={{ display: "inline-block", width: "8px", height: "8px", background: "#00ffaa", borderRadius: "50%", boxShadow: "0 0 10px #00ffaa" }} />
+              </div>
+              <div className="floating-badge floating-badge--2">
+                <span>🔥 12k+ Night Owls Online</span>
+              </div>
+              <div className="floating-badge floating-badge--3">
+                <span>🎟️ VIP Table Seating Active</span>
+              </div>
             </div>
-          </div>
 
-          <div className="hero__scroll-indicator blur-in">
-            <span>Scroll</span>
-            <div className="hero__scroll-line">
-              <div className="hero__scroll-dot animate-scroll-down" />
+            <div className="hero__content">
+              <span className="hero__eyebrow blur-in">Your Night, Simplified</span>
+              <h1 className="hero__title name-reveal">
+                After<em>Dark</em>
+              </h1>
+              <p className="hero__role blur-in">
+                A place to{" "}
+                <span key={roleIndex} className="hero__role-word animate-role-fade-in">
+                  {HERO_ROLES[roleIndex]}
+                </span>{" "}
+                in your city.
+              </p>
+              <p className="hero__description blur-in">
+                Discover nearby events, book tickets instantly, reserve tables, and
+                plan nights out with your squad — all in one place.
+              </p>
+
+              <div className="hero__cta blur-in">
+                <button className="hero__btn hero__btn--solid" onClick={() => navigate("/signup")}>
+                  <HiSparkles /> Get Started
+                </button>
+                <button className="hero__btn hero__btn--outline" onClick={() => navigate("/owner/login")}>
+                  I'm a Venue Owner
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="hero__scroll-indicator blur-in">
+              <span>Scroll</span>
+              <div className="hero__scroll-line">
+                <div className="hero__scroll-dot animate-scroll-down" />
+              </div>
+            </div>
+          </section>
+
+          {/* PUBLIC EVENTS TEASER SECTION */}
+          {publicEvents.length > 0 && (
+            <section className="public-events-section">
+              <div className="public-events-section__inner">
+                <h2 className="public-events-title font-display">
+                  🔥 Trending Parties <em>Near You</em>
+                </h2>
+                <p className="public-events-subtitle">
+                  Explore the hottest local nightlife bookings and reserve your spot instantly.
+                </p>
+                <div className="public-events-grid">
+                  {publicEvents.map((event) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+                <div className="public-events-cta">
+                  <Link to="/signup" className="public-events-btn">
+                    Join AfterDark to Book Passes <HiArrowRight style={{ marginLeft: "6px" }} />
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
+        </>
       ) : profile?.role === "venue_owner" ? (
         
         // 2. PERSONALIZED LOGGED-IN PARTNER HUB
@@ -469,7 +521,7 @@ function Home() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                   <Link to="/owner/dashboard?tab=create-event" className="pass-mini-card" style={{ textDecoration: "none", cursor: "pointer", background: "rgba(255, 255, 255, 0.02)", padding: "16px", border: "1px solid var(--border)", borderRadius: "16px" }}>
                     <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
-                      <div style={{ background: "rgba(124, 92, 252, 0.1)", color: "#a78bfa", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                      <div style={{ background: "rgba(124, 92, 252, 0.1)", color: "var(--primary-light)", width: "40px", height: "40px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
                         📅
                       </div>
                       <div style={{ textAlign: "left" }}>
@@ -583,7 +635,7 @@ function Home() {
               {/* Active Passes list */}
               <div className="glass-card">
                 <h3 className="glass-card__title">
-                  <HiTicket style={{ color: "#7d5cfc", fontSize: "1.2rem" }} /> My Tickets
+                  <HiTicket style={{ color: "var(--primary)", fontSize: "1.2rem" }} /> My Tickets
                 </h3>
                 
                 {myBookings.length === 0 ? (
@@ -615,7 +667,7 @@ function Home() {
               {/* Joined Crews list */}
               <div className="glass-card" style={{ marginTop: "24px" }}>
                 <h3 className="glass-card__title">
-                  <HiUsers style={{ color: "#a78bfa", fontSize: "1.2rem" }} /> Active Crews
+                  <HiUsers style={{ color: "var(--primary-light)", fontSize: "1.2rem" }} /> Active Crews
                 </h3>
                 
                 {mySquads.length === 0 ? (
@@ -956,7 +1008,7 @@ function Home() {
                 type="submit" 
                 className="ed-book-btn" 
                 disabled={submittingVibe}
-                style={{ background: "linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%)", boxShadow: "0 0 20px rgba(125, 92, 252, 0.25)" }}
+                style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
               >
                 {submittingVibe ? "Recording Vibe..." : "Broadcast Live Vibe Check ⚡"}
               </button>

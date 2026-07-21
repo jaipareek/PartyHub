@@ -576,4 +576,267 @@
   text-align: left;
 }
 
+/* ── Modern Table Bookings Cards ── */
+.owner-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 10px;
+}
+
+.owner-table-card {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  text-align: left;
+}
+
+.owner-table-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 0, 127, 0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 0, 127, 0.05);
+}
+
+.owner-table-card.pending {
+  border-color: rgba(255, 208, 0, 0.15);
+}
+
+.owner-table-card.pending:hover {
+  border-color: rgba(255, 208, 0, 0.35);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 208, 0, 0.05);
+}
+
+.owner-table-card.confirmed {
+  border-color: rgba(0, 255, 170, 0.15);
+}
+
+.owner-table-card.confirmed:hover {
+  border-color: rgba(0, 255, 170, 0.35);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 255, 170, 0.05);
+}
+
+.owner-table-card__glow-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+}
+
+.owner-table-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.owner-table-card__guest-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.owner-table-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 0 15px rgba(255, 0, 127, 0.2);
+}
+
+.owner-table-card__guest-details h4 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: white;
+  margin: 0;
+  text-align: left;
+}
+
+.owner-table-card__guest-details p {
+  font-size: 0.76rem;
+  color: hsl(var(--muted));
+  margin: 2px 0 0 0;
+  text-align: left;
+}
+
+/* Badge highlights */
+.owner-table-card__badge-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.owner-table-card__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.owner-table-card__badge.occasion {
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+  border: 1px solid var(--border);
+}
+
+.owner-table-card__badge.area {
+  background: rgba(125, 92, 252, 0.08);
+  color: var(--primary-light);
+  border: 1px solid rgba(125, 92, 252, 0.2);
+}
+
+/* Neon Table Code display */
+.owner-table-card__code-display {
+  background: rgba(255, 0, 127, 0.04);
+  border: 1px dashed rgba(255, 0, 127, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.owner-table-card__code-display.confirmed {
+  background: rgba(0, 255, 170, 0.04);
+  border-color: rgba(0, 255, 170, 0.2);
+}
+
+.owner-table-card__code-label {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: hsl(var(--muted));
+}
+
+.owner-table-card__code-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 4px;
+  text-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
+}
+
+.owner-table-card__code-value.confirmed {
+  color: var(--success);
+  text-shadow: 0 0 10px rgba(0, 255, 170, 0.3);
+}
+
+/* Grid parameters list */
+.owner-table-card__details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.owner-table-card__detail-item {
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.owner-table-card__detail-label {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: hsl(var(--muted));
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.owner-table-card__detail-val {
+  font-weight: 600;
+  color: white;
+  text-align: left;
+}
+
+.owner-table-card__requests {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.75);
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.01);
+  padding: 8px 12px;
+  border-left: 2px solid var(--primary);
+  margin-top: 2px;
+  text-align: left;
+}
+
+/* Action button area */
+.owner-table-card__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.owner-table-card__btn {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.owner-table-card__btn.accept {
+  background: linear-gradient(135deg, #00ffaa 0%, #00b377 100%);
+  color: black;
+  box-shadow: 0 4px 12px rgba(0, 255, 170, 0.25);
+}
+
+.owner-table-card__btn.accept:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 255, 170, 0.4);
+}
+
+.owner-table-card__btn.decline {
+  background: linear-gradient(135deg, #ff2a5f 0%, #b8002a 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 42, 95, 0.25);
+}
+
+.owner-table-card__btn.decline:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 42, 95, 0.4);
+}
+
+.owner-table-card__btn.cancel {
+  background: none;
+  border: 1px solid var(--border);
+  color: hsl(var(--muted));
+}
+
+.owner-table-card__btn.cancel:hover {
+  border-color: white;
+  color: white;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+
 

@@ -162,7 +162,7 @@
 }
 
 .vd-verified-badge {
-  color: #7d5cfc;
+  color: var(--primary);
   font-size: 1.8rem;
   flex-shrink: 0;
 }
@@ -308,7 +308,7 @@
   height: 16px;
   border-radius: 50%;
   background: white;
-  border: 3px solid #7d5cfc;
+  border: 3px solid var(--primary);
   transform: translateX(-50%);
   box-shadow: 0 0 8px rgba(125, 92, 252, 0.6);
   z-index: 5;
@@ -415,8 +415,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #7d5cfc;
-  border: 1px solid #7d5cfc;
+  background: var(--primary);
+  border: 1px solid var(--primary);
   color: white;
   padding: 10px 24px;
   border-radius: var(--radius-full);
@@ -428,8 +428,8 @@
 }
 
 .vd-btn-primary:hover {
-  background: #6a49eb;
-  border-color: #6a49eb;
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
   box-shadow: 0 0 16px rgba(125, 92, 252, 0.4);
 }
 
@@ -602,7 +602,7 @@
 }
 
 .vd-event-strip__btn {
-  background: #7d5cfc;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -614,7 +614,7 @@
 }
 
 .vd-event-strip__btn:hover {
-  background: #6a49eb;
+  background: var(--primary-dark);
 }
 
 .vd-all-events-btn {
@@ -675,7 +675,7 @@
 .vd-score-num {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #7d5cfc;
+  color: var(--primary);
 }
 
 .vd-score-max {
@@ -722,7 +722,7 @@
 .vd-scorecard-fill {
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(to right, #7d5cfc, #a78bfa);
+  background: var(--gradient-primary);
 }
 
 /* Review submission form input rules */
@@ -791,7 +791,7 @@
 }
 
 .vd-form-textarea:focus {
-  border-color: #7d5cfc;
+  border-color: var(--primary);
   outline: none;
 }
 
@@ -837,7 +837,7 @@
   border-radius: 50%;
   background: rgba(125, 92, 252, 0.1);
   border: 1px solid rgba(125, 92, 252, 0.2);
-  color: #a78bfa;
+  color: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;

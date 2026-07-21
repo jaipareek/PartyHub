@@ -351,84 +351,150 @@ function Dashboard() {
                 <p>Guests haven't requested any table bookings for your venue yet.</p>
               </div>
             ) : (
-              <div className="guestlist-list-wrapper" style={{ maxHeight: "none", overflow: "visible" }}>
-                <table className="guestlist-table">
-                  <thead>
-                    <tr>
-                      <th>Guest Name</th>
-                      <th>Contact Details</th>
-                      <th>Occasion</th>
-                      <th>Seating Area</th>
-                      <th>Date & Time</th>
-                      <th>Guests</th>
-                      <th>Special Notes</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reservations.map((reserve) => (
-                      <tr key={reserve.id}>
-                        <td>
-                          <strong>{reserve.guest?.full_name || "Anonymous"}</strong>
-                        </td>
-                        <td>
-                          <div style={{ fontSize: "0.78rem" }}>
-                            <span>{reserve.guest?.email || "No email"}</span>
-                            <span style={{ display: "block", color: "hsl(var(--muted))" }}>{reserve.guest?.phone || "No phone"}</span>
+              <div className="owner-tables-grid">
+                {reservations.map((reserve) => {
+                  const guestName = reserve.guest?.full_name || "Anonymous";
+                  const initials = guestName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?";
+                  
+                  // Status config
+                  const statusColors = {
+                    pending: "pending",
+                    confirmed: "confirmed",
+                    declined: "declined",
+                    cancelled: "cancelled"
+                  };
+                  const cardStatusClass = statusColors[reserve.status] || "";
+
+                  // Emojis for seating area
+                  const areaEmojis = {
+                    main_lounge: "🛋️",
+                    rooftop: "🌃",
+                    vip_booth: "👑",
+                    poolside: "🌊",
+                    bar_seats: "🍸"
+                  };
+                  const areaLabel = reserve.seating_area?.replace("_", " ") || "Seating";
+                  const areaEmoji = areaEmojis[reserve.seating_area] || "🪑";
+
+                  // Emojis for occasions
+                  const occasionEmojis = {
+                    dinner: "🍽️ Dinner",
+                    lunch: "☀️ Lunch",
+                    birthday: "🎂 Birthday",
+                    date: "👩‍❤️‍👨 Date Night",
+                    casual: "🍻 Casual Drinks",
+                    business: "🤝 Business",
+                    other: "🌟 Other"
+                  };
+                  const occasionLabel = occasionEmojis[reserve.occasion] || `🌟 ${reserve.occasion}`;
+
+                  return (
+                    <div key={reserve.id} className={`owner-table-card ${cardStatusClass}`}>
+                      {/* Top colored strip */}
+                      <div className="owner-table-card__glow-header" />
+
+                      {/* Header row */}
+                      <div className="owner-table-card__header">
+                        <div className="owner-table-card__guest-info">
+                          <div className="owner-table-card__avatar">{initials}</div>
+                          <div className="owner-table-card__guest-details">
+                            <h4>{guestName}</h4>
+                            <p>{reserve.guest?.phone || "No phone"}</p>
                           </div>
-                        </td>
-                        <td style={{ textTransform: "capitalize", fontWeight: 700 }}>{reserve.occasion}</td>
-                        <td style={{ textTransform: "capitalize", fontSize: "0.8rem" }}>{reserve.seating_area?.replace("_", " ")}</td>
-                        <td>
-                          <div style={{ fontSize: "0.82rem" }}>
-                            <strong>{formatDate(reserve.reservation_date)}</strong>
-                            <span style={{ display: "block", color: "hsl(var(--muted))" }}>{formatTime(reserve.reservation_time)}</span>
-                          </div>
-                        </td>
-                        <td style={{ fontWeight: 800 }}>{reserve.guest_count}</td>
-                        <td style={{ maxWidth: "200px", fontSize: "0.78rem", fontStyle: "italic", whiteSpace: "normal", color: "rgba(255, 255, 255, 0.7)" }}>
-                          {reserve.special_requests || "—"}
-                        </td>
-                        <td>
-                          <span className={`guestlist-badge guestlist-badge--${reserve.status}`}>
-                            {reserve.status}
+                        </div>
+                        <span className={`guestlist-badge guestlist-badge--${reserve.status}`}>
+                          {reserve.status}
+                        </span>
+                      </div>
+
+                      {/* Badges row */}
+                      <div className="owner-table-card__badge-row">
+                        <span className="owner-table-card__badge occasion">
+                          {occasionLabel}
+                        </span>
+                        <span className="owner-table-card__badge area" style={{ textTransform: "capitalize" }}>
+                          {areaEmoji} {areaLabel}
+                        </span>
+                      </div>
+
+                      {/* Table code neon selector display */}
+                      {reserve.table_code && (
+                        <div className={`owner-table-card__code-display ${cardStatusClass}`}>
+                          <span className="owner-table-card__code-label">Assigned Spot</span>
+                          <span className={`owner-table-card__code-value ${cardStatusClass}`}>
+                            Table {reserve.table_code}
                           </span>
-                        </td>
-                        <td>
-                          {reserve.status === "pending" ? (
-                            <div style={{ display: "flex", gap: "6px" }}>
-                              <button
-                                className="guestlist-checkin-btn"
-                                onClick={() => handleUpdateReservationStatus(reserve.id, "confirmed")}
-                                style={{ background: "#10b981" }}
-                              >
-                                Accept
-                              </button>
-                              <button
-                                className="guestlist-checkin-btn"
-                                onClick={() => handleUpdateReservationStatus(reserve.id, "declined")}
-                                style={{ background: "#ef4444" }}
-                              >
-                                Decline
-                              </button>
-                            </div>
-                          ) : reserve.status === "confirmed" ? (
+                        </div>
+                      )}
+
+                      {/* Info grid */}
+                      <div className="owner-table-card__details">
+                        <div className="owner-table-card__detail-item">
+                          <span className="owner-table-card__detail-label">Date</span>
+                          <span className="owner-table-card__detail-val">
+                            📅 {formatDate(reserve.reservation_date)}
+                          </span>
+                        </div>
+                        <div className="owner-table-card__detail-item">
+                          <span className="owner-table-card__detail-label">Time</span>
+                          <span className="owner-table-card__detail-val">
+                            ⏰ {formatTime(reserve.reservation_time)}
+                          </span>
+                        </div>
+                        <div className="owner-table-card__detail-item">
+                          <span className="owner-table-card__detail-label">Guests Count</span>
+                          <span className="owner-table-card__detail-val">
+                            👥 {reserve.guest_count} Guest{reserve.guest_count > 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div className="owner-table-card__detail-item">
+                          <span className="owner-table-card__detail-label">Email</span>
+                          <span className="owner-table-card__detail-val" style={{ fontSize: "0.72rem", overflow: "hidden", textOverflow: "ellipsis", display: "block", whiteSpace: "nowrap" }} title={reserve.guest?.email}>
+                            ✉️ {reserve.guest?.email || "No email"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Special requests */}
+                      {reserve.special_requests && (
+                        <div className="owner-table-card__requests">
+                          "{reserve.special_requests}"
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="owner-table-card__actions">
+                        {reserve.status === "pending" ? (
+                          <>
                             <button
-                              className="guestlist-checkin-btn"
-                              onClick={() => handleUpdateReservationStatus(reserve.id, "cancelled")}
-                              style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--border)", color: "white" }}
+                              className="owner-table-card__btn accept"
+                              onClick={() => handleUpdateReservationStatus(reserve.id, "confirmed")}
                             >
-                              Cancel
+                              Accept
                             </button>
-                          ) : (
-                            <span style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>Resolved</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            <button
+                              className="owner-table-card__btn decline"
+                              onClick={() => handleUpdateReservationStatus(reserve.id, "declined")}
+                            >
+                              Decline
+                            </button>
+                          </>
+                        ) : reserve.status === "confirmed" ? (
+                          <button
+                            className="owner-table-card__btn cancel"
+                            onClick={() => handleUpdateReservationStatus(reserve.id, "cancelled")}
+                          >
+                            Cancel Booking
+                          </button>
+                        ) : (
+                          <div style={{ width: "100%", textAlign: "center", fontSize: "0.78rem", color: "hsl(var(--muted))", fontWeight: 700, padding: "8px 0", background: "rgba(255,255,255,0.02)", borderRadius: "6px" }}>
+                            Resolved
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

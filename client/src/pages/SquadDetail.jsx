@@ -20,6 +20,42 @@ function SquadDetail() {
   const [newMessage, setNewMessage] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
 
+  // Share payment states
+  const [shareCardNumber, setShareCardNumber] = useState("");
+  const [shareExpiry, setShareExpiry] = useState("");
+  const [shareCvv, setShareCvv] = useState("");
+  const [payingShare, setPayingShare] = useState(false);
+
+  const handlePayShare = async (e) => {
+    e.preventDefault();
+    if (!shareCardNumber || !shareExpiry || !shareCvv) {
+      toast.error("Please fill in all card details");
+      return;
+    }
+
+    try {
+      setPayingShare(true);
+      const res = await api.post(`/squads/${squadId}/pay-share`, {
+        cardNumber: shareCardNumber,
+        expiry: shareExpiry,
+        cvv: shareCvv
+      });
+
+      if (res.data?.success) {
+        toast.success("Share paid successfully! 💳");
+        setShareCardNumber("");
+        setShareExpiry("");
+        setShareCvv("");
+        fetchSquad();
+      }
+    } catch (err) {
+      console.error("Failed to pay share:", err);
+      toast.error(err.response?.data?.error || "Payment failed");
+    } finally {
+      setPayingShare(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -233,21 +269,33 @@ function SquadDetail() {
                       </div>
                     </div>
 
-                    {member.has_booked ? (
-                      <span className="squad-member-row__badge squad-member-row__badge--booked">
-                        <HiCheck /> Ticket Booked
-                      </span>
+                    {squad.booking ? (
+                      member.has_paid ? (
+                        <span className="squad-member-row__badge squad-member-row__badge--booked" style={{ background: "rgba(0, 255, 170, 0.08)", borderColor: "rgba(0, 255, 170, 0.2)", color: "var(--success)" }}>
+                          <HiCheck /> Paid Share
+                        </span>
+                      ) : (
+                        <span className="squad-member-row__badge squad-member-row__badge--pending" style={{ background: "rgba(255, 208, 0, 0.08)", borderColor: "rgba(255, 208, 0, 0.2)", color: "#ffd000" }}>
+                          <HiExclamationTriangle /> Pending Payment
+                        </span>
+                      )
                     ) : (
-                      <span className="squad-member-row__badge squad-member-row__badge--pending">
-                        <HiExclamationTriangle /> Pending RSVP
-                      </span>
+                      member.has_booked ? (
+                        <span className="squad-member-row__badge squad-member-row__badge--booked">
+                          <HiCheck /> Ticket Booked
+                        </span>
+                      ) : (
+                        <span className="squad-member-row__badge squad-member-row__badge--pending">
+                          <HiExclamationTriangle /> Pending RSVP
+                        </span>
+                      )
                     )}
                   </div>
                 ))}
               </div>
 
               {/* Quick RSVP CTA if user is in squad but hasn't booked passes yet */}
-              {isMember && !members.find(m => m.user?.id === user.id)?.has_booked && (
+              {isMember && !squad.booking && !members.find(m => m.user?.id === user.id)?.has_booked && (
                 <div style={{ marginTop: "24px", padding: "20px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "12px", textAlign: "center" }}>
                   <p style={{ margin: "0 0 14px 0", fontSize: "0.88rem", color: "rgba(255,255,255,0.9)" }}>
                     You haven't booked your pass for this event yet! Lock in your ticket now to join the crew.
@@ -262,6 +310,73 @@ function SquadDetail() {
                 </div>
               )}
             </div>
+
+            {/* Split Checkout Payment Card */}
+            {isMember && squad.booking && !members.find(m => m.user?.id === user.id)?.has_paid && (
+              <div className="squad-card squad-payment-split-card">
+                <h2 className="squad-card__heading" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <span>💳 Pay Your Fractional Share</span>
+                </h2>
+                <p style={{ fontSize: "0.88rem", color: "hsl(var(--muted))", marginTop: 0 }}>
+                  This is a shared crew checkout. Pay your individual share to unlock your digital pass.
+                </p>
+
+                <div className="squad-payment-split-summary" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px", marginBottom: "20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.9rem" }}>
+                    <span>Your Share Price:</span>
+                    <strong style={{ color: "var(--primary-light)" }}>₹{(parseFloat(squad.booking.total_amount) / squad.booking.quantity).toFixed(2)}</strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "hsl(var(--muted))" }}>
+                    <span>Pass Type:</span>
+                    <span>{squad.booking.tier_type}</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handlePayShare} className="ed-checkout-form">
+                  <div className="ed-card-fields">
+                    <div className="create-event__field">
+                      <label style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>Card Number</label>
+                      <input 
+                        type="text" 
+                        placeholder="4111 2222 3333 4444"
+                        value={shareCardNumber}
+                        onChange={(e) => setShareCardNumber(e.target.value)}
+                        maxLength={19}
+                        required
+                      />
+                    </div>
+                    <div className="ed-card-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "12px" }}>
+                      <div className="create-event__field">
+                        <label style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>Expiry Date</label>
+                        <input 
+                          type="text" 
+                          placeholder="MM/YY"
+                          value={shareExpiry}
+                          onChange={(e) => setShareExpiry(e.target.value)}
+                          maxLength={5}
+                          required
+                        />
+                      </div>
+                      <div className="create-event__field">
+                        <label style={{ fontSize: "0.75rem", color: "hsl(var(--muted))" }}>CVV</label>
+                        <input 
+                          type="password" 
+                          placeholder="123"
+                          value={shareCvv}
+                          onChange={(e) => setShareCvv(e.target.value)}
+                          maxLength={3}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="ed-pricing__book-btn" style={{ marginTop: "24px", width: "100%" }} disabled={payingShare}>
+                    {payingShare ? "Verifying..." : `Pay Share — ₹${(parseFloat(squad.booking.total_amount) / squad.booking.quantity).toFixed(2)}`}
+                  </button>
+                </form>
+              </div>
+            )}
 
             {/* Crew Chat Room */}
             {isMember && (
@@ -335,6 +450,49 @@ function SquadDetail() {
 
           {/* Right Sidebar Details */}
           <div className="squad-sidebar">
+            {/* Split Bill Progress Widget */}
+            {squad.booking && (
+              <div className="squad-card squad-split-progress-widget" style={{ marginBottom: "20px" }}>
+                <h3 style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "1px", color: "var(--primary-light)", margin: "0 0 16px 0" }}>
+                  💸 Split Bill Progress
+                </h3>
+                
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.9rem" }}>
+                  <span>Paid:</span>
+                  <strong>
+                    {members.filter(m => m.has_paid).length} of {squad.booking.quantity} Crew
+                  </strong>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden", marginBottom: "16px" }}>
+                  <div 
+                    style={{ 
+                      width: `${(members.filter(m => m.has_paid).length / squad.booking.quantity) * 100}%`, 
+                      height: "100%", 
+                      background: "linear-gradient(90deg, var(--primary), var(--primary-light))",
+                      boxShadow: "0 0 8px var(--primary)",
+                      transition: "width 0.4s ease"
+                    }} 
+                  />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+                  <span style={{ color: "hsl(var(--muted))" }}>Total Tab:</span>
+                  <span style={{ color: "white", fontWeight: 700 }}>₹{parseFloat(squad.booking.total_amount).toLocaleString("en-IN")}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem", marginTop: "6px" }}>
+                  <span style={{ color: "hsl(var(--muted))" }}>Status:</span>
+                  <span style={{ 
+                    color: squad.booking.status === "confirmed" ? "var(--success)" : "#ffd000",
+                    fontWeight: 700 
+                  }}>
+                    {squad.booking.status === "confirmed" ? "✓ Fully Paid" : "⏳ Pending Payments"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Event mini card */}
             <div className="squad-event-mini-card">
               <img

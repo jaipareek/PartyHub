@@ -28,7 +28,7 @@
 
 .venues-header h1 em {
   font-style: normal;
-  background: linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%);
+  background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -148,8 +148,8 @@
 
 .venues-tab-btn.active {
   background: rgba(124, 92, 252, 0.12);
-  border-color: #7d5cfc;
-  color: #a78bfa;
+  border-color: var(--primary);
+  color: var(--primary-light);
   box-shadow: 0 0 12px rgba(125, 92, 252, 0.15);
 }
 
@@ -293,8 +293,8 @@
 }
 
 .venue-dir-card:hover .venue-dir-card__btn {
-  background: #7d5cfc;
-  border-color: #7d5cfc;
+  background: var(--primary);
+  border-color: var(--primary);
   box-shadow: 0 0 12px rgba(125, 92, 252, 0.3);
 }
 

@@ -59,7 +59,7 @@
 }
 
 .pill-navbar__logo:hover .pill-navbar__logo-ring {
-  background: linear-gradient(270deg, #7c5cfc 0%, #ff6b9d 100%);
+  background: var(--gradient-primary);
 }
 
 .pill-navbar__logo-text {

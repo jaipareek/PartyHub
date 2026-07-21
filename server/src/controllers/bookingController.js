@@ -6,7 +6,7 @@ import supabase from "../config/supabase.js";
 // POST /api/bookings — Create a new booking
 export const createBooking = async (req, res) => {
   try {
-    const { event_id, tier_type, quantity, booking_type } = req.body;
+    const { event_id, tier_type, quantity, booking_type, is_split_payment, squad_name } = req.body;
 
     if (!event_id || !tier_type || !quantity) {
       return res.status(400).json({
@@ -65,6 +65,9 @@ export const createBooking = async (req, res) => {
     }
 
     // 5. Create booking entry in DB
+    const bookingStatus = is_split_payment ? "pending" : "confirmed";
+    const paymentStatus = is_split_payment ? "pending" : "paid";
+
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
       .insert({
@@ -74,8 +77,8 @@ export const createBooking = async (req, res) => {
         tier_type,
         quantity,
         total_amount: totalAmount,
-        status: "confirmed",
-        payment_status: "paid",
+        status: bookingStatus,
+        payment_status: paymentStatus,
         booking_code: code,
         qr_code: `afterdark://booking/${code}`,
       })
@@ -84,7 +87,42 @@ export const createBooking = async (req, res) => {
 
     if (bookingErr) throw bookingErr;
 
-    // 6. Update event's booked count
+    // 6. Handle split payment squad creation
+    let squad = null;
+    if (is_split_payment) {
+      const nameOfSquad = squad_name || `Squad Checkout — ${event.title.slice(0, 15)}`;
+      const { data: createdSquad, error: squadErr } = await supabase
+        .from("squads")
+        .insert({
+          name: nameOfSquad,
+          leader_id: req.user.id,
+          event_id,
+          booking_id: booking.id,
+          total_amount: totalAmount,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (squadErr) throw squadErr;
+      squad = createdSquad;
+
+      // Automatically add the host creator as a pending member (to pay their share)
+      const shareAmount = totalAmount / quantity;
+      const { error: memberErr } = await supabase
+        .from("squad_members")
+        .insert({
+          squad_id: squad.id,
+          user_id: req.user.id,
+          status: "accepted",
+          amount_owed: shareAmount,
+          has_paid: false,
+        });
+
+      if (memberErr) throw memberErr;
+    }
+
+    // 7. Update event's booked count
     await supabase
       .from("events")
       .update({ booked_count: (event.booked_count || 0) + quantity })
@@ -92,8 +130,13 @@ export const createBooking = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Event booked successfully! 🎉",
-      data: booking,
+      message: is_split_payment 
+        ? "Split payment squad created successfully! 👥"
+        : "Event booked successfully! 🎉",
+      data: {
+        ...booking,
+        squad
+      },
     });
   } catch (error) {
     console.error("Booking creation error:", error.message);

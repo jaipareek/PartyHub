@@ -145,7 +145,7 @@ function MyVenue() {
           
           <div className="glass-card">
             <h3 className="glass-card__title">
-              <HiBuildingStorefront style={{ color: "#7d5cfc" }} /> Basic Information
+              <HiBuildingStorefront style={{ color: "var(--primary)" }} /> Basic Information
             </h3>
             
             <div className="my-venue-fields-list">
@@ -300,7 +300,7 @@ function MyVenue() {
                 ) : (
                   <p className="my-venue-val">
                     {venue.website ? (
-                      <a href={venue.website} target="_blank" rel="noreferrer" style={{ color: "#a78bfa" }}>
+                      <a href={venue.website} target="_blank" rel="noreferrer" style={{ color: "var(--primary-light)" }}>
                         {venue.website.replace("https://", "").replace("http://", "")}
                       </a>
                     ) : (

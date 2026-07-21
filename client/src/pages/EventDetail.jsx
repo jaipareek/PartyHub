@@ -49,6 +49,10 @@ function EventDetail() {
   const [showCreateSquad, setShowCreateSquad] = useState(false);
   const [squadName, setSquadName] = useState("");
 
+  // Split payment states
+  const [isSplitPayment, setIsSplitPayment] = useState(false);
+  const [splitSquadName, setSplitSquadName] = useState("");
+
   const fetchEventSquads = async () => {
     try {
       setFetchingSquads(true);
@@ -102,6 +106,10 @@ function EventDetail() {
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
+    if (isSplitPayment && !splitSquadName.trim()) {
+      toast.error("Please enter a Squad Name for the split checkout");
+      return;
+    }
     if (!cardNumber || !expiry || !cvv) {
       toast.error("Please fill in all payment details");
       return;
@@ -113,15 +121,23 @@ function EventDetail() {
         event_id: event.id,
         tier_type: event.pricing[selectedTier].type,
         quantity,
+        is_split_payment: isSplitPayment,
+        squad_name: isSplitPayment ? splitSquadName : undefined,
       });
 
       if (res.data?.success) {
-        toast.success("Booking confirmed! 🎟️");
-        setBookingResult(res.data.data.booking_code);
-        setEvent((prev) => ({
-          ...prev,
-          booked_count: (prev.booked_count || 0) + quantity,
-        }));
+        if (isSplitPayment && res.data.data.squad) {
+          toast.success("Squad checkout split initiated! 👥");
+          setCheckoutOpen(false);
+          navigate(`/squads/${res.data.data.squad.id}`);
+        } else {
+          toast.success("Booking confirmed! 🎟️");
+          setBookingResult(res.data.data.booking_code);
+          setEvent((prev) => ({
+            ...prev,
+            booked_count: (prev.booked_count || 0) + quantity,
+          }));
+        }
       }
     } catch (err) {
       console.error("Booking transaction failed:", err);
@@ -546,7 +562,7 @@ function EventDetail() {
         {relatedEvents.length > 0 && (
           <div className="ed-related-section">
             <h2 className="ed-related-title">
-              <HiSparkles style={{ color: "#7d5cfc", marginRight: "8px", verticalAlign: "middle" }} />
+              <HiSparkles style={{ color: "var(--primary)", marginRight: "8px", verticalAlign: "middle" }} />
               More Events You'll Love
             </h2>
             <div className="ed-related-grid">
@@ -583,6 +599,40 @@ function EventDetail() {
                     <span>Total Price</span>
                     <strong style={{ color: "var(--primary-light)" }}>₹{finalPrice}</strong>
                   </div>
+                </div>
+
+                {/* Bill Splitting Options */}
+                <div style={{ marginBottom: "20px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border)", borderRadius: "10px", padding: "16px", textAlign: "left" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", color: "white", fontWeight: 700, fontSize: "0.88rem" }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isSplitPayment}
+                      onChange={(e) => {
+                        setIsSplitPayment(e.target.checked);
+                        if (e.target.checked && !splitSquadName) {
+                          setSplitSquadName(`${profile?.full_name || "My"}'s Squad — ${event.title.slice(0, 10)}`);
+                        }
+                      }}
+                      style={{ width: "18px", height: "18px", cursor: "pointer", accentColor: "var(--primary)" }}
+                    />
+                    <span>Split bill fractionally with my Crew 👥</span>
+                  </label>
+                  {isSplitPayment && (
+                    <div className="create-event__field" style={{ marginTop: "12px" }}>
+                      <label style={{ fontSize: "0.72rem", color: "hsl(var(--muted))" }}>Crew Squad Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Saturday Night Out"
+                        value={splitSquadName}
+                        onChange={(e) => setSplitSquadName(e.target.value)}
+                        required={isSplitPayment}
+                        style={{ marginTop: "4px" }}
+                      />
+                      <p style={{ color: "hsl(var(--muted))", fontSize: "0.72rem", margin: "6px 0 0 0" }}>
+                        Each member pays ₹{(finalPrice / quantity).toFixed(2)} when joining your crew.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="ed-card-fields">

@@ -192,7 +192,7 @@ function GateScanner() {
           <button 
             onClick={startScanning} 
             className="ed-book-btn"
-            style={{ width: "auto", padding: "12px 30px", background: "linear-gradient(135deg, #7d5cfc 0%, #a78bfa 100%)", boxShadow: "0 0 20px rgba(125, 92, 252, 0.3)" }}
+            style={{ width: "auto", padding: "12px 30px", background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
             disabled={!libLoaded}
           >
             {!libLoaded ? "Loading Scanner Library..." : "Start Camera Scanner"}

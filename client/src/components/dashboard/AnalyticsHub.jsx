@@ -109,7 +109,7 @@ function AnalyticsHub({ venueId }) {
         <div className="vd-metric-card" style={{ padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
             <span className="vd-metric-lbl">Gross Revenue</span>
-            <HiCurrencyRupee style={{ color: "#7d5cfc", fontSize: "1.3rem" }} />
+            <HiCurrencyRupee style={{ color: "var(--primary)", fontSize: "1.3rem" }} />
           </div>
           <span className="vd-metric-val" style={{ fontSize: "1.75rem", color: "white", textShadow: "0 0 10px rgba(125,92,252,0.25)" }}>
             ₹{kpis.totalRevenue.toLocaleString()}
@@ -181,8 +181,8 @@ function AnalyticsHub({ venueId }) {
               >
                 <defs>
                   <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#7d5cfc" stopOpacity="0.4"/>
-                    <stop offset="100%" stopColor="#7d5cfc" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.4"/>
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0"/>
                   </linearGradient>
                 </defs>
 
@@ -199,7 +199,7 @@ function AnalyticsHub({ venueId }) {
                   <path 
                     d={pathD} 
                     fill="none" 
-                    stroke="#7d5cfc" 
+                    stroke="var(--primary)" 
                     strokeWidth="3.5" 
                     strokeLinecap="round"
                     style={{ filter: "drop-shadow(0px 0px 8px rgba(125,92,252,0.4))" }}
@@ -213,7 +213,7 @@ function AnalyticsHub({ venueId }) {
                       cx={p.x} 
                       cy={p.y} 
                       r={hoveredSalesIndex === idx ? "7" : "4.5"} 
-                      fill={hoveredSalesIndex === idx ? "#a78bfa" : "#7d5cfc"} 
+                      fill={hoveredSalesIndex === idx ? "var(--primary-light)" : "var(--primary)"} 
                       stroke="white"
                       strokeWidth="2.5"
                       style={{ cursor: "pointer", transition: "all 0.15s ease" }}
@@ -242,7 +242,7 @@ function AnalyticsHub({ venueId }) {
                   zIndex: 50,
                   whiteSpace: "nowrap"
                 }}>
-                  <strong style={{ display: "block", color: "#a78bfa" }}>{points[hoveredSalesIndex].date}</strong>
+                  <strong style={{ display: "block", color: "var(--primary-light)" }}>{points[hoveredSalesIndex].date}</strong>
                   <span>Revenue: <strong>₹{points[hoveredSalesIndex].revenue.toLocaleString()}</strong></span>
                   <span style={{ display: "block", fontSize: "0.7rem", color: "hsl(var(--muted))" }}>Tickets: {points[hoveredSalesIndex].passes}</span>
                 </div>
@@ -399,7 +399,7 @@ function AnalyticsHub({ venueId }) {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: "8px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ width: "12px", height: "12px", borderRadius: "50%", background: "#a78bfa" }} />
+                <span style={{ width: "12px", height: "12px", borderRadius: "50%", background: "var(--primary-light)" }} />
                 <span style={{ fontSize: "0.85rem", color: "white" }}>Student Discount Passes</span>
               </div>
               <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "white" }}>

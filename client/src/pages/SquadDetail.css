@@ -422,3 +422,22 @@
   box-shadow: var(--shadow-glow);
 }
 
+/* ── Split Payments Widget & Card ── */
+.squad-split-progress-widget {
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-glow-muted);
+}
+
+.squad-payment-split-card {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.03), rgba(255, 0, 127, 0.03));
+  border: 1px solid rgba(124, 92, 252, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.squad-payment-split-summary {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border);
+}
+
+

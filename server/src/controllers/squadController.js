@@ -55,10 +55,10 @@ export const joinSquad = async (req, res) => {
     const { squadId } = req.params;
     const userId = req.user.id;
 
-    // 1. Verify squad exists
+    // 1. Verify squad exists and fetch booking details
     const { data: squad, error: squadErr } = await supabase
       .from("squads")
-      .select("id")
+      .select("id, name, leader_id, total_amount, booking:bookings(id, quantity)")
       .eq("id", squadId)
       .single();
 
@@ -66,13 +66,34 @@ export const joinSquad = async (req, res) => {
       return res.status(404).json({ success: false, error: "Squad not found" });
     }
 
-    // 2. Insert member
+    // 2. Validate squad capacity if there is a split checkout booking
+    let shareAmount = 0;
+    if (squad.booking) {
+      const { count, error: countErr } = await supabase
+        .from("squad_members")
+        .select("*", { count: "exact", head: true })
+        .eq("squad_id", squadId);
+
+      if (countErr) throw countErr;
+
+      if (count >= squad.booking.quantity) {
+        return res.status(400).json({
+          success: false,
+          error: `Squad is full. This booking split is limited to a maximum of ${squad.booking.quantity} members.`
+        });
+      }
+      shareAmount = parseFloat(squad.total_amount || 0) / squad.booking.quantity;
+    }
+
+    // 3. Insert member with computed share amount
     const { data: member, error: memberErr } = await supabase
       .from("squad_members")
       .insert({
         squad_id: squadId,
         user_id: userId,
         status: "accepted", // Auto-accept to make coordination simple
+        amount_owed: shareAmount,
+        has_paid: false
       })
       .select()
       .single();
@@ -93,18 +114,11 @@ export const joinSquad = async (req, res) => {
       .eq("id", userId)
       .single();
 
-    // Fetch squad details (to get leader and name)
-    const { data: fullSquad } = await supabase
-      .from("squads")
-      .select("name, leader_id")
-      .eq("id", squadId)
-      .single();
-
-    if (fullSquad && fullSquad.leader_id !== userId) {
+    if (squad.leader_id !== userId) {
       await supabase.from("notifications").insert({
-        user_id: fullSquad.leader_id,
+        user_id: squad.leader_id,
         title: "New Squad Member! 👥",
-        message: `${profile?.full_name || "A friend"} joined your squad "${fullSquad.name}".`,
+        message: `${profile?.full_name || "A friend"} joined your squad "${squad.name}".`,
         type: "squad_invite",
         related_id: squadId,
         related_type: "squad",
@@ -127,7 +141,7 @@ export const getSquadDetails = async (req, res) => {
   try {
     const { squadId } = req.params;
 
-    // 1. Get squad and associated event/venue details
+    // 1. Get squad and associated event/venue/booking details
     const { data: squad, error: squadErr } = await supabase
       .from("squads")
       .select(`
@@ -136,6 +150,9 @@ export const getSquadDetails = async (req, res) => {
         event:events (
           id, title, date, start_time, poster_url,
           venue:venues (id, name, city)
+        ),
+        booking:bookings (
+          id, quantity, tier_type, total_amount, status, payment_status, booking_code
         )
       `)
       .eq("id", squadId)
@@ -149,7 +166,7 @@ export const getSquadDetails = async (req, res) => {
     const { data: members, error: membersErr } = await supabase
       .from("squad_members")
       .select(`
-        id, status, joined_at,
+        id, status, joined_at, amount_owed, has_paid,
         user:profiles (id, full_name, email, avatar_url)
       `)
       .eq("squad_id", squadId);
@@ -171,8 +188,8 @@ export const getSquadDetails = async (req, res) => {
 
     const enrichedMembers = members.map((m) => ({
       ...m,
-      has_booked: bookingMap.has(m.user.id),
-      booking_code: bookingMap.get(m.user.id) || null,
+      has_booked: bookingMap.has(m.user.id) || m.has_paid,
+      booking_code: bookingMap.get(m.user.id) || (m.has_paid ? squad.booking?.booking_code : null) || null,
     }));
 
     res.status(200).json({
@@ -381,6 +398,130 @@ export const getMySquads = async (req, res) => {
     res.status(200).json({ success: true, data: squads });
   } catch (error) {
     console.error("Error getting active squads:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// POST /api/squads/:squadId/pay-share — Complete payment for a member's share
+export const payMemberShare = async (req, res) => {
+  try {
+    const { squadId } = req.params;
+    const userId = req.user.id;
+    const { cardNumber, expiry, cvv } = req.body;
+
+    if (!cardNumber || !expiry || !cvv) {
+      return res.status(400).json({ success: false, error: "Payment details are required" });
+    }
+
+    // 1. Verify squad exists and fetch booking details
+    const { data: squad, error: squadErr } = await supabase
+      .from("squads")
+      .select("*, booking:bookings(*)")
+      .eq("id", squadId)
+      .single();
+
+    if (squadErr || !squad) {
+      return res.status(404).json({ success: false, error: "Squad not found" });
+    }
+
+    if (!squad.booking) {
+      return res.status(400).json({ success: false, error: "This squad does not have an active split payment checkout" });
+    }
+
+    // 2. Fetch the squad member record
+    const { data: member, error: memberErr } = await supabase
+      .from("squad_members")
+      .select("*")
+      .eq("squad_id", squadId)
+      .eq("user_id", userId)
+      .single();
+
+    if (memberErr || !member) {
+      return res.status(400).json({ success: false, error: "You are not a member of this squad" });
+    }
+
+    if (member.has_paid) {
+      return res.status(400).json({ success: false, error: "You have already paid your share for this booking" });
+    }
+
+    // 3. Mark the member as paid
+    const { error: updateErr } = await supabase
+      .from("squad_members")
+      .update({ has_paid: true })
+      .eq("id", member.id);
+
+    if (updateErr) throw updateErr;
+
+    // 4. Fetch all members to evaluate payment progress
+    const { data: allMembers, error: fetchMembersErr } = await supabase
+      .from("squad_members")
+      .select("*")
+      .eq("squad_id", squadId);
+
+    if (fetchMembersErr) throw fetchMembersErr;
+
+    const paidCount = allMembers.filter(m => m.has_paid).length;
+    const totalSlots = squad.booking.quantity;
+
+    // If all slots have paid, confirm the booking!
+    let bookingConfirmed = false;
+    if (paidCount === totalSlots) {
+      const { error: confirmErr } = await supabase
+        .from("bookings")
+        .update({
+          status: "confirmed",
+          payment_status: "paid"
+        })
+        .eq("id", squad.booking.id);
+
+      if (confirmErr) throw confirmErr;
+      bookingConfirmed = true;
+
+      // Create notification entries for all squad members
+      const notifications = allMembers.map(m => ({
+        user_id: m.user_id,
+        title: "Crew Booking Confirmed! 🎉",
+        message: `Your squad "${squad.name}" split payment is complete! Your tickets are now active.`,
+        type: "booking",
+        related_id: squad.booking.id,
+        related_type: "booking"
+      }));
+
+      await supabase.from("notifications").insert(notifications);
+    } else {
+      // Notify the squad leader about progress
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+
+      if (squad.leader_id !== userId) {
+        await supabase.from("notifications").insert({
+          user_id: squad.leader_id,
+          title: "Squad Payment Received! 💸",
+          message: `${profile?.full_name || "A member"} paid their share. Split progress: ${paidCount}/${totalSlots} paid.`,
+          type: "payment",
+          related_id: squadId,
+          related_type: "squad"
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Share payment successful! 💳",
+      data: {
+        has_paid: true,
+        booking_confirmed: bookingConfirmed,
+        progress: {
+          paid_count: paidCount,
+          total_slots: totalSlots
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Error paying squad member share:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 };

@@ -1,9 +1,9 @@
 /* ============================================
-   🌙 AfterDark — Global Design System
+   🌙 AfterDark — Global Design System (Party Redesign)
    ============================================ */
 
-/* Google Fonts — Inter for body, Instrument Serif for display */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&display=swap");
+/* Google Fonts — Outfit for body, Space Grotesk for display/headers, Instrument Serif as secondary display */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap");
 
 /* ============================================
    CSS RESET
@@ -18,12 +18,12 @@
 
 :root {
   /* ── Core Palette (HSL values) ── */
-  --bg: 240 33% 5%;
-  --surface: 240 20% 8%;
-  --text: 0 0% 96%;
-  --muted: 240 10% 53%;
-  --stroke: 240 15% 14%;
-  --accent: 0 0% 96%;
+  --bg: 260 45% 2%;        /* Obsidian violet-black (#030206) */
+  --surface: 260 25% 6%;   /* Midnight glass surface (#0a0812) */
+  --text: 0 0% 98%;        /* Bright clean off-white */
+  --muted: 260 15% 65%;    /* Soft muted lilac-grey */
+  --stroke: 260 20% 12%;   /* Deep violet stroke border */
+  --accent: 330 100% 50%;  /* Hot Neon Pink (#ff007f) */
 
   /* ── Wrapped HSL Colors ── */
   --color-bg: hsl(var(--bg));
@@ -33,51 +33,55 @@
   --color-stroke: hsl(var(--stroke));
 
   /* ── Party Accent Colors ── */
-  --primary: #7c5cfc;
-  --primary-light: #9f8aff;
-  --primary-dark: #5a3de6;
-  --primary-glow: rgba(124, 92, 252, 0.3);
+  --primary: #ff007f;           /* Neon Magenta / Hot Pink */
+  --primary-light: #ff5fa3;     /* Light neon pink */
+  --primary-dark: #b8005b;      /* Dark magenta shadow color */
+  --primary-glow: rgba(255, 0, 127, 0.35);
 
-  --accent-pink: #ff6b9d;
-  --accent-pink-light: #ff8fb8;
-  --accent-pink-dark: #e64d7a;
+  --accent-pink: #00f0ff;       /* Cyan Accent */
+  --accent-pink-light: #70f6ff; /* Light cyan */
+  --accent-pink-dark: #009eb0;  /* Dark cyan */
+
+  --accent-violet: #7d5cfc;     /* Club purple */
+  --accent-violet-glow: rgba(125, 92, 252, 0.35);
 
   /* ── Status Colors ── */
-  --success: #00d68f;
-  --warning: #ffaa00;
-  --error: #ff4757;
+  --success: #00ffaa;           /* Electric lime green */
+  --warning: #ffd000;           /* Golden honey yellow */
+  --error: #ff2a5f;             /* Punchy red-pink */
 
   /* ── Party Meter Colors ── */
-  --meter-chill: #00d68f;
-  --meter-moderate: #ffaa00;
-  --meter-packed: #ff4757;
+  --meter-chill: #00ffaa;
+  --meter-moderate: #ffd000;
+  --meter-packed: #ff2a5f;
 
   /* ── Borders & Glass ── */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-light: rgba(255, 255, 255, 0.15);
-  --glass: rgba(255, 255, 255, 0.05);
-  --glass-strong: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 0, 127, 0.1);          /* Neon Pink halo border */
+  --border-light: rgba(125, 92, 252, 0.2);     /* Violet border */
+  --glass: rgba(10, 8, 18, 0.7);
+  --glass-strong: rgba(6, 5, 10, 0.9);
 
-  /* ── Gradients ── */
-  --gradient-primary: linear-gradient(90deg, #7c5cfc 0%, #ff6b9d 100%);
-  --gradient-card: linear-gradient(145deg, hsl(var(--surface)), hsl(240 20% 10%));
-  --gradient-hero: linear-gradient(180deg, hsl(var(--bg)) 0%, hsl(var(--surface)) 50%, hsl(var(--bg)) 100%);
+  /* ── Gradients (Hot Pink to Violet to Cyan) ── */
+  --gradient-primary: linear-gradient(135deg, #ff007f 0%, #7d5cfc 50%, #00f0ff 100%);
+  --gradient-card: linear-gradient(145deg, hsl(var(--surface)), hsl(260 35% 4%));
+  --gradient-hero: radial-gradient(circle at top, hsl(260 40% 8%) 0%, hsl(var(--bg)) 70%);
 
-  /* ── Legacy aliases for EventCard compatibility ── */
+  /* ── Legacy aliases for compatibility ── */
   --bg-primary: hsl(var(--bg));
   --bg-secondary: hsl(var(--surface));
   --bg-card: hsl(var(--surface));
-  --bg-card-hover: hsl(240 20% 11%);
-  --bg-elevated: hsl(240 20% 10%);
+  --bg-card-hover: hsl(260 25% 9%);
+  --bg-elevated: hsl(260 25% 8%);
   --text-primary: hsl(var(--text));
   --text-secondary: hsl(var(--muted));
-  --text-muted: hsl(240 10% 40%);
+  --text-muted: hsl(260 10% 45%);
 
   /* ── Shadows ── */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.8);
   --shadow-glow: 0 0 20px var(--primary-glow);
+  --shadow-glow-cyan: 0 0 20px rgba(0, 240, 255, 0.25);
 
   /* ── Border Radius ── */
   --radius-sm: 8px;
@@ -91,9 +95,9 @@
   --transition-base: 250ms ease;
   --transition-slow: 400ms ease;
 
-  /* ── Typography ── */
-  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-display: "Instrument Serif", Georgia, serif;
+  /* ── Typography (Outfit & Space Grotesk) ── */
+  --font-body: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
   --font-family: var(--font-body);
 }
 
@@ -105,6 +109,12 @@ html {
 body {
   font-family: var(--font-body);
   background: hsl(var(--bg));
+  /* Glowing ambient nightlife mesh background */
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(255, 0, 127, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(125, 92, 252, 0.04) 0%, transparent 50%);
+  background-attachment: fixed;
   color: hsl(var(--text));
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -163,7 +173,7 @@ select {
 }
 
 /* ============================================
-   UTILITY CLASSES
+   UTILITY CLASSES & NEON GLOWS
    ============================================ */
 .container {
   width: 100%;
@@ -174,10 +184,11 @@ select {
 
 .glass-card {
   background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .gradient-text {
@@ -185,6 +196,14 @@ select {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.neon-text-glow {
+  text-shadow: 0 0 10px rgba(255, 0, 127, 0.5), 0 0 20px rgba(125, 92, 252, 0.3);
+}
+
+.neon-text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
 }
 
 /* ── Accent Gradient Utility ── */
@@ -195,6 +214,8 @@ select {
 /* ── Font Display ── */
 .font-display {
   font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 /* ── Buttons ── */
@@ -212,11 +233,12 @@ select {
   transition: all var(--transition-base);
   border: none;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 0, 127, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-glow), 0 6px 20px rgba(255, 0, 127, 0.35);
 }
 
 .btn-secondary {
@@ -237,7 +259,8 @@ select {
 
 .btn-secondary:hover {
   background: var(--glass);
-  border-color: var(--primary-light);
+  border-color: var(--accent-pink);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
   transform: translateY(-2px);
 }
 

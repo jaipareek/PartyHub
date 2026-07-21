@@ -10,7 +10,8 @@ import {
   getSquadMessages,
   sendSquadMessage,
   togglePinMessage,
-  getMySquads
+  getMySquads,
+  payMemberShare
 } from "../controllers/squadController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -23,6 +24,7 @@ router.get("/my/active", getMySquads);
 router.post("/", createSquad);
 router.post("/:squadId/join", joinSquad);
 router.get("/:squadId", getSquadDetails);
+router.post("/:squadId/pay-share", payMemberShare);
 router.get("/event/:eventId", getEventSquads);
 router.get("/:squadId/messages", getSquadMessages);
 router.post("/:squadId/messages", sendSquadMessage);
