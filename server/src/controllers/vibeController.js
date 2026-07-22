@@ -220,3 +220,31 @@ export const getVenueLiveVibe = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// GET /api/venues/my-submitted-vibes — Get user's submitted vibe venue IDs in the last 12 hours
+export const getMySubmittedVibes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const twelveHoursAgo = new Date();
+    twelveHoursAgo.setHours(twelveHoursAgo.getHours() - 12);
+
+    const { data: reports, error } = await supabase
+      .from("vibe_checks")
+      .select("venue_id, created_at")
+      .eq("user_id", userId)
+      .gte("created_at", twelveHoursAgo.toISOString());
+
+    if (error) throw error;
+
+    const submittedVenueIds = (reports || []).map((r) => r.venue_id);
+
+    res.status(200).json({
+      success: true,
+      data: submittedVenueIds,
+    });
+  } catch (error) {
+    console.error("Error fetching submitted vibes:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

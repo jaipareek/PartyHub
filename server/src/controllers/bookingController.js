@@ -90,36 +90,36 @@ export const createBooking = async (req, res) => {
     // 6. Handle split payment squad creation
     let squad = null;
     if (is_split_payment) {
-      const nameOfSquad = squad_name || `Squad Checkout — ${event.title.slice(0, 15)}`;
+      const nameOfSquad = squad_name || `Squad Checkout — ${(event.title || "Party").slice(0, 15)}`;
       const { data: createdSquad, error: squadErr } = await supabase
         .from("squads")
         .insert({
           name: nameOfSquad,
           leader_id: req.user.id,
           event_id,
-          booking_id: booking.id,
-          total_amount: totalAmount,
           is_active: true,
         })
         .select()
         .single();
 
-      if (squadErr) throw squadErr;
-      squad = createdSquad;
+      if (squadErr) {
+        console.error("Squad creation error in booking:", squadErr.message);
+      } else {
+        squad = createdSquad;
 
-      // Automatically add the host creator as a pending member (to pay their share)
-      const shareAmount = totalAmount / quantity;
-      const { error: memberErr } = await supabase
-        .from("squad_members")
-        .insert({
-          squad_id: squad.id,
-          user_id: req.user.id,
-          status: "accepted",
-          amount_owed: shareAmount,
-          has_paid: false,
-        });
-
-      if (memberErr) throw memberErr;
+        // Automatically add the host creator as an accepted squad member
+        try {
+          await supabase
+            .from("squad_members")
+            .insert({
+              squad_id: squad.id,
+              user_id: req.user.id,
+              status: "accepted",
+            });
+        } catch (mErr) {
+          console.warn("Squad member insert notice:", mErr.message);
+        }
+      }
     }
 
     // 7. Update event's booked count

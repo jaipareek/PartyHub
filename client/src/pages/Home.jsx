@@ -105,13 +105,45 @@ function Home() {
   const heroRef = useRef(null);
   const marqueeRef = useRef(null);
 
-  // Vibe Check modal states
+  // Vibe Check modal & submission tracking states
   const [vibeModalOpen, setVibeModalOpen] = useState(false);
   const [selectedVibeVenue, setSelectedVibeVenue] = useState(null);
   const [vibeType, setVibeType] = useState("techno");
   const [vibeCrowd, setVibeCrowd] = useState("busy");
   const [vibeEnergy, setVibeEnergy] = useState("high");
   const [submittingVibe, setSubmittingVibe] = useState(false);
+
+  const [submittedVibeVenueIds, setSubmittedVibeVenueIds] = useState([]);
+  const [submittedVibeBookings, setSubmittedVibeBookings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("submittedVibeBookings") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  // Calculate active check-in booking for atmosphere vibe banner
+  // MUST satisfy: 
+  // 1. Booking status is 'checked_in' (Scanned at gate by bouncer)
+  // 2. User has NOT already submitted a vibe check for this venue/booking in the database
+  // 3. Party is NOT over (event date is today or ongoing)
+  const todayStr = new Date().toISOString().split("T")[0];
+  const activeCheckInBooking = myBookings.find((b) => {
+    if (b.status !== "checked_in") return false;
+    
+    // Check if venue already has a submitted vibe report from user in DB
+    const vId = b.event?.venue?.id || b.event?.venue_id;
+    if (vId && submittedVibeVenueIds.includes(vId)) return false; // Hide if submitted to DB!
+    if (submittedVibeBookings.includes(b.id)) return false; // Hide if submitted locally!
+    
+    // Check if event date has passed
+    if (b.event?.date) {
+      const eventDateStr = new Date(b.event.date).toISOString().split("T")[0];
+      if (eventDateStr < todayStr) return false; // Party is over! Automatically remove!
+    }
+    
+    return true;
+  });
 
   // Cycle hero roles
   useEffect(() => {
@@ -211,18 +243,20 @@ function Home() {
   const fetchDashboardData = async () => {
     try {
       setDashboardLoading(true);
-      // Fetch bookings, squads, tonight, and deals in parallel
-      const [bookingsRes, squadsRes, tonightRes, dealsRes] = await Promise.all([
+      // Fetch bookings, squads, tonight, deals, and submitted vibe records in parallel
+      const [bookingsRes, squadsRes, tonightRes, dealsRes, vibesRes] = await Promise.all([
         api.get("/bookings/my-bookings"),
         api.get("/squads/my/active"),
         api.get("/events/tonight"),
         api.get("/events/student-deals"),
+        api.get("/venues/my-submitted-vibes").catch(() => null),
       ]);
 
       if (bookingsRes.data?.success) setMyBookings(bookingsRes.data.data);
       if (squadsRes.data?.success) setMySquads(squadsRes.data.data.slice(0, 3));
       if (tonightRes.data?.success) setTonightEvents(tonightRes.data.data.slice(0, 3));
       if (dealsRes.data?.success) setDealsEvents(dealsRes.data.data.slice(0, 3));
+      if (vibesRes?.data?.success) setSubmittedVibeVenueIds(vibesRes.data.data);
 
     } catch (err) {
       console.error("Error loading home dashboard data:", err);
@@ -314,6 +348,17 @@ function Home() {
       if (res.data?.success) {
         toast.success("Live vibe check recorded! ⚡ Check the venue's AfterMeter to see updates.");
         setVibeModalOpen(false);
+
+        // Hide banner immediately for this check-in!
+        if (selectedVibeVenue?.id) {
+          setSubmittedVibeVenueIds((prev) => [...prev, selectedVibeVenue.id]);
+        }
+        if (activeCheckInBooking?.id) {
+          const updated = [...submittedVibeBookings, activeCheckInBooking.id];
+          setSubmittedVibeBookings(updated);
+          localStorage.setItem("submittedVibeBookings", JSON.stringify(updated));
+        }
+
         // Refresh dashboard data
         fetchDashboardData();
       }
@@ -611,14 +656,14 @@ function Home() {
         // 3. PERSONALIZED LOGGED-IN CUSTOMER VIBE HUB
         <div className="home-dashboard">
           
-          {/* Live Vibe Check Survey Alert Card */}
-          {myBookings.find(b => b.status === "checked_in") && (
+          {/* Live Vibe Check Survey Alert Card (Only visible when checked-in AND not submitted AND party is ongoing) */}
+          {activeCheckInBooking && (
             <div className="venue-warning-banner animate-role-fade-in" style={{ background: "rgba(125, 92, 252, 0.1)", border: "1px solid rgba(125, 92, 252, 0.3)", color: "white", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
               <div style={{ display: "flex", gap: "14px", alignItems: "center", textAlign: "left" }}>
                 <span style={{ fontSize: "1.7rem", filter: "drop-shadow(0 0 8px rgba(125,92,252,0.4))" }}>⚡</span>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "1rem", color: "white", fontWeight: 800 }}>
-                    You are checked-in at {myBookings.find(b => b.status === "checked_in").event?.venue?.name || "the club"}!
+                  <h3 style={{ margin: 0, fontSize: "1.05rem", color: "white", fontWeight: 800 }}>
+                    You are checked-in for <span style={{ color: "var(--primary-light)" }}>"{activeCheckInBooking.event?.title || "Party Event"}"</span> at <span style={{ color: "var(--accent-pink)" }}>{activeCheckInBooking.event?.venue?.name || "the club"}</span>!
                   </h3>
                   <p style={{ margin: "3px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.82rem" }}>
                     How's the crowd, sound volume, and general atmosphere at the scene right now?
@@ -627,8 +672,7 @@ function Home() {
               </div>
               <button 
                 onClick={() => {
-                  const check = myBookings.find(b => b.status === "checked_in");
-                  setSelectedVibeVenue(check?.event?.venue);
+                  setSelectedVibeVenue(activeCheckInBooking.event?.venue);
                   setVibeModalOpen(true);
                 }}
                 className="guestlist-checkin-btn"

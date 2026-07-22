@@ -173,30 +173,44 @@ export const getSquadDetails = async (req, res) => {
 
     if (membersErr) throw membersErr;
 
-    // 3. For each member, check if they have a confirmed booking for this squad's event
+    // 3. Check if members have a booking for this squad's event
     const memberIds = members.map((m) => m.user.id);
     const { data: bookings, error: bookingsErr } = await supabase
       .from("bookings")
-      .select("user_id, booking_code")
+      .select("user_id, booking_code, status, quantity, tier_type")
       .eq("event_id", squad.event_id)
-      .in("user_id", memberIds)
-      .eq("status", "confirmed");
+      .in("user_id", memberIds);
 
-    if (bookingsErr) throw bookingsErr;
+    if (bookingsErr && bookingsErr.code !== "PGRST116") {
+      console.warn("Bookings query notice:", bookingsErr.message);
+    }
 
-    const bookingMap = new Map(bookings.map((b) => [b.user_id, b.booking_code]));
+    const userBookings = bookings || [];
+    const bookingMap = new Map(userBookings.map((b) => [b.user_id, b.booking_code]));
 
-    const enrichedMembers = members.map((m) => ({
-      ...m,
-      has_booked: bookingMap.has(m.user.id) || m.has_paid,
-      booking_code: bookingMap.get(m.user.id) || (m.has_paid ? squad.booking?.booking_code : null) || null,
-    }));
+    // Check if squad has an active paylock session
+    const { data: paylock } = await supabase
+      .from("paylock_sessions")
+      .select("*")
+      .eq("squad_id", squadId)
+      .maybeSingle();
+
+    const enrichedMembers = members.map((m) => {
+      const userBooking = userBookings.find((b) => b.user_id === m.user.id);
+      const isBooked = !!userBooking || bookingMap.has(m.user.id) || m.has_paid || !!paylock;
+      return {
+        ...m,
+        has_booked: isBooked,
+        booking_code: userBooking?.booking_code || bookingMap.get(m.user.id) || (m.has_paid ? "PL-PASS" : null),
+      };
+    });
 
     res.status(200).json({
       success: true,
       data: {
         squad,
         members: enrichedMembers,
+        paylock
       },
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { HiMapPin, HiCalendar, HiClock, HiUserGroup, HiShare, HiCheck, HiExclamationTriangle } from "react-icons/hi2";
+import PayLockCard from "../components/ui/PayLockCard";
 import api from "../lib/api";
 import toast from "react-hot-toast";
 import "./SquadDetail.css";
@@ -12,6 +13,7 @@ function SquadDetail() {
   const navigate = useNavigate();
 
   const [squadData, setSquadData] = useState(null);
+  const [paylockSession, setPaylockSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
 
@@ -72,12 +74,24 @@ function SquadDetail() {
       if (res.data?.success) {
         setSquadData(res.data.data);
       }
+      fetchPayLock();
     } catch (err) {
       console.error("Failed to load squad details:", err);
       toast.error("Squad not found");
       navigate("/events");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPayLock = async () => {
+    try {
+      const res = await api.get(`/paylock/squad/${squadId}`);
+      if (res.data?.success) {
+        setPaylockSession(res.data.data);
+      }
+    } catch (err) {
+      console.warn("Paylock lookup notice:", err);
     }
   };
 
@@ -298,7 +312,7 @@ function SquadDetail() {
               </div>
 
               {/* Quick RSVP CTA if user is in squad but hasn't booked passes yet */}
-              {isMember && !squad.booking && !members.find(m => m.user?.id === user.id)?.has_booked && (
+              {isMember && !paylockSession && !squad.booking && !members.find(m => m.user?.id === user.id)?.has_booked && (
                 <div style={{ marginTop: "24px", padding: "20px", background: "rgba(245, 158, 11, 0.05)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "12px", textAlign: "center" }}>
                   <p style={{ margin: "0 0 14px 0", fontSize: "0.88rem", color: "rgba(255,255,255,0.9)" }}>
                     You haven't booked your pass for this event yet! Lock in your ticket now to join the crew.
@@ -313,6 +327,11 @@ function SquadDetail() {
                 </div>
               )}
             </div>
+
+            {/* 💳 Dynamic Squad PayLock Card */}
+            {paylockSession && (
+              <PayLockCard paylock={paylockSession} squad={squad} onUpdate={fetchPayLock} />
+            )}
 
             {/* Split Checkout Payment Card */}
             {isMember && squad.booking && !members.find(m => m.user?.id === user.id)?.has_paid && (

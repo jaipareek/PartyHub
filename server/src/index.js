@@ -21,6 +21,7 @@ import squadRoutes from "./routes/squadRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import tableRoutes from "./routes/tableRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import paylockRoutes from "./routes/paylockRoutes.js";
 
 // Load environment variables from .env file FIRST
 dotenv.config();
@@ -116,6 +117,9 @@ app.use("/api/table-reservations", tableRoutes);
 
 // ✅ Analytics routes
 app.use("/api/owner/analytics", analyticsRoutes);
+
+// ✅ PayLock Group Bill-Splitter routes
+app.use("/api/paylock", paylockRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);

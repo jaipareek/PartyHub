@@ -1,0 +1,303 @@
+/* ============================================
+   💳 Squad PayLock Card Styling
+   ============================================ */
+.paylock-card {
+  background: rgba(20, 16, 36, 0.95);
+  border: 1px solid rgba(125, 92, 252, 0.35);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(125, 92, 252, 0.18);
+  animation: fadeIn 0.3s ease;
+  text-align: left;
+}
+
+.paylock-card.completed {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);
+}
+
+.paylock-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.paylock-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--primary-light);
+  background: rgba(125, 92, 252, 0.15);
+  border: 1px solid rgba(125, 92, 252, 0.3);
+  padding: 3px 10px;
+  border-radius: 8px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.paylock-card.completed .paylock-badge {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.paylock-item-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: white;
+}
+
+.paylock-timer {
+  font-size: 0.75rem;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.paylock-amounts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.paylock-amount-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.paylock-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: hsl(var(--muted));
+  letter-spacing: 0.5px;
+}
+
+.paylock-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: white;
+  margin-top: 2px;
+}
+
+.paylock-val.remaining {
+  color: #f59e0b;
+}
+
+.paylock-val.success {
+  color: #10b981;
+}
+
+.paylock-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Progress bar */
+.paylock-progress-container {
+  margin-bottom: 16px;
+}
+
+.paylock-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.paylock-progress-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 6px;
+  transition: width 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.paylock-card.completed .paylock-progress-fill {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.paylock-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: hsl(var(--muted));
+  margin-top: 6px;
+}
+
+.paylock-progress-meta strong {
+  color: var(--primary-light);
+}
+
+/* Contributors list */
+.paylock-contributors {
+  margin-bottom: 16px;
+}
+
+.paylock-subhead {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: hsl(var(--muted));
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.paylock-contributors-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.paylock-no-payments {
+  font-size: 0.78rem;
+  color: hsl(var(--muted));
+  font-style: italic;
+}
+
+.paylock-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(125, 92, 252, 0.12);
+  border: 1px solid rgba(125, 92, 252, 0.25);
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+
+.paylock-chip-icon {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+}
+
+.paylock-chip-name {
+  color: white;
+  font-weight: 600;
+}
+
+.paylock-chip-amt {
+  color: var(--primary-light);
+  font-weight: 800;
+}
+
+/* Actions */
+.paylock-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.paylock-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.paylock-btn--equal {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 4px 16px rgba(125, 92, 252, 0.3);
+}
+
+.paylock-btn--equal:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(125, 92, 252, 0.4);
+}
+
+.paylock-btn--custom {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.paylock-btn--custom:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.paylock-btn--cancel {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  flex: 0 0 auto;
+  padding: 12px 16px;
+}
+
+.paylock-custom-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.paylock-custom-input-grp {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(125, 92, 252, 0.4);
+  border-radius: 12px;
+  padding: 0 14px;
+}
+
+.paylock-currency-symbol {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--primary-light);
+  margin-right: 8px;
+}
+
+.paylock-input {
+  width: 100%;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 12px 0;
+  outline: none;
+}
+
+.paylock-custom-btn-grp {
+  display: flex;
+  gap: 8px;
+}
+
+.paylock-complete-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}

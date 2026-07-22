@@ -138,9 +138,23 @@ function EventDetail() {
 
       if (res.data?.success) {
         if (isSplitPayment && res.data.data.squad) {
-          toast.success("Squad checkout split initiated! 👥");
+          const newSquadId = res.data.data.squad.id;
+          // Initialize Squad PayLock Card in Squad Chat
+          try {
+            await api.post("/paylock/create", {
+              squad_id: newSquadId,
+              event_id: event.id,
+              item_title: `Pass: ${event.title}`,
+              total_target_amount: finalPrice,
+              item_type: "ticket"
+            });
+          } catch (pErr) {
+            console.warn("Paylock init notice:", pErr);
+          }
+
+          toast.success("Squad PayLock launched in Squad Chat! 💳");
           setCheckoutOpen(false);
-          navigate(`/squads/${res.data.data.squad.id}`);
+          navigate(`/squads/${newSquadId}`);
         } else {
           toast.success("Booking confirmed! 🎟️");
           setBookingResult(res.data.data.booking_code);
@@ -304,8 +318,8 @@ function EventDetail() {
           <div className="ed-poster-col">
             <div className="ed-poster-frame">
               <img 
-                src={event.poster_url || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800"} 
-                alt={event.title} 
+                src={(event.poster_url && typeof event.poster_url === "string" && event.poster_url.trim() !== "") ? event.poster_url : "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800"} 
+                alt={event.title || "Event Poster"} 
               />
               <button 
                 className={`ed-favorite-btn ${isFavorited ? "active" : ""}`}
