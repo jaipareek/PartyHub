@@ -361,12 +361,13 @@ export const togglePinMessage = async (req, res) => {
   }
 };
 
-// GET /api/squads/my/active — Get active squads for the logged-in user
+// GET /api/squads/my/active — Get active & archived squads for logged-in user with 48h auto-clean
 export const getMySquads = async (req, res) => {
   try {
     const userId = req.user.id;
+    const { include_archived } = req.query;
 
-    // Fetch squad memberships for the user
+    // 1. Fetch squad memberships for the user
     const { data: memberships, error: memberErr } = await supabase
       .from("squad_members")
       .select("squad_id")
@@ -379,23 +380,68 @@ export const getMySquads = async (req, res) => {
 
     const squadIds = memberships.map((m) => m.squad_id);
 
-    // Fetch the detailed squad data
+    // 2. Fetch detailed squad data
     const { data: squads, error: squadsErr } = await supabase
       .from("squads")
       .select(`
         *,
-        leader:profiles (id, full_name, email),
+        leader:profiles (id, full_name, email, avatar_url),
         event:events (
           id, title, date, start_time, poster_url,
           venue:venues (id, name, city)
         )
       `)
       .in("id", squadIds)
-      .eq("is_active", true);
+      .order("updated_at", { ascending: false });
 
     if (squadsErr) throw squadsErr;
 
-    res.status(200).json({ success: true, data: squads });
+    // 3. Evaluate 2-Day (48 Hour) Inactivity / Expiry Auto-Archive logic
+    const now = new Date();
+    const TWO_DAYS_MS = 48 * 60 * 60 * 1000;
+
+    const enrichedSquads = await Promise.all(
+      squads.map(async (squad) => {
+        // Fetch last message for chat preview
+        const { data: lastMsg } = await supabase
+          .from("squad_messages")
+          .select("id, message, created_at, user:profiles(full_name)")
+          .eq("squad_id", squad.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Determine last activity time (event date or last message date or squad update date)
+        const eventDate = squad.event?.date ? new Date(squad.event.date) : new Date(squad.updated_at);
+        const lastMsgDate = lastMsg?.created_at ? new Date(lastMsg.created_at) : null;
+        const mostRecentDate = lastMsgDate && lastMsgDate > eventDate ? lastMsgDate : eventDate;
+
+        const timeDiff = now - mostRecentDate;
+        const isExpired = timeDiff > TWO_DAYS_MS;
+
+        // Auto update is_active in database if expired
+        if (isExpired && squad.is_active) {
+          await supabase
+            .from("squads")
+            .update({ is_active: false })
+            .eq("id", squad.id);
+          squad.is_active = false;
+        }
+
+        return {
+          ...squad,
+          is_archived: !squad.is_active || isExpired,
+          last_message: lastMsg || null,
+        };
+      })
+    );
+
+    // Filter based on query unless include_archived=true
+    const result = include_archived === "true" 
+      ? enrichedSquads 
+      : enrichedSquads.filter((s) => !s.is_archived);
+
+    res.status(200).json({ success: true, data: result });
   } catch (error) {
     console.error("Error getting active squads:", error.message);
     res.status(500).json({ success: false, error: error.message });

@@ -121,3 +121,128 @@ export const verifyStudent = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// GET /api/admin/stats — Overall platform analytics dashboard stats
+export const getAdminStats = async (req, res) => {
+  try {
+    const [bookingsRes, venuesRes, eventsRes, usersRes] = await Promise.all([
+      supabase
+        .from("bookings")
+        .select("id, total_amount, status, created_at, user:profiles(full_name), event:events(title)")
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase.from("venues").select("id, is_verified"),
+      supabase.from("events").select("id, is_active"),
+      supabase.from("profiles").select("id, role, is_student, student_verification_status"),
+    ]);
+
+    const bookings = bookingsRes.data || [];
+    const venues = venuesRes.data || [];
+    const events = eventsRes.data || [];
+    const users = usersRes.data || [];
+
+    const totalBookings = bookings.length;
+    const totalRevenue = bookings.reduce((acc, b) => acc + Number(b.total_amount || 0), 0);
+    const totalVenues = venues.length;
+    const pendingVenues = venues.filter((v) => !v.is_verified).length;
+    const totalEvents = events.length;
+    const activeEvents = events.filter((e) => e.is_active).length;
+    const totalUsers = users.length;
+    const pendingStudents = users.filter((u) => u.student_verification_status === "pending").length;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue,
+        totalBookings,
+        totalVenues,
+        pendingVenues,
+        totalEvents,
+        activeEvents,
+        totalUsers,
+        pendingStudents,
+        recentBookings: bookings.slice(0, 5),
+      },
+    });
+  } catch (error) {
+    console.error("Admin stats error:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// GET /api/admin/events — List all events for admin management
+export const getAllEventsAdmin = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .select(`
+        *,
+        venue:venues (id, name, city)
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// PUT /api/admin/events/:id/toggle — Toggle event active status
+export const toggleEventStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    const { data, error } = await supabase
+      .from("events")
+      .update({ is_active })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// GET /api/admin/users — List all users for admin management
+export const getAllUsersAdmin = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    res.status(200).json({ success: true, count: data.length, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// PUT /api/admin/users/:id/role — Update user role
+export const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role || !["customer", "venue_owner", "admin"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Invalid role" });
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ role, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

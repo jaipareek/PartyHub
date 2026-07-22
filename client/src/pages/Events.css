@@ -25,9 +25,27 @@
   transform: translateX(-50%);
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 0, 127, 0.12) 0%, rgba(125, 92, 252, 0.06) 40%, transparent 70%);
   pointer-events: none;
-  opacity: 0.4;
+  animation: events-header-pulse 6s ease-in-out infinite;
+}
+
+/* Animated gradient line divider */
+.events-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--primary), rgba(0, 240, 255, 0.5), var(--primary), transparent);
+  background-size: 200% 100%;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes events-header-pulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.7; transform: translateX(-50%) scale(1.05); }
 }
 
 .events-header__title {
@@ -75,12 +93,12 @@
 .events-search__input {
   width: 100%;
   padding: 16px 20px 16px 52px;
-  background: #111116;
-  border: 1px solid var(--border);
+  background: rgba(10, 8, 18, 0.8);
+  border: 1px solid rgba(255, 0, 127, 0.1);
   border-radius: var(--radius-full);
   font-size: 1rem;
   color: hsl(var(--text));
-  transition: all var(--transition-fast);
+  transition: all 0.3s ease;
 }
 
 .events-search__input::placeholder {
@@ -89,8 +107,9 @@
 
 .events-search__input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 12px rgba(125, 92, 252, 0.2);
-  background: #16161f;
+  box-shadow: 0 0 12px rgba(255, 0, 127, 0.2), 0 0 25px rgba(125, 92, 252, 0.1);
+  background: rgba(16, 14, 28, 0.9);
+  animation: border-glow-pulse 3s ease-in-out infinite;
 }
 
 .events-search__clear {
@@ -138,27 +157,29 @@
 
 .events-filters__chip {
   padding: 8px 18px;
-  background: var(--glass);
-  border: 1px solid var(--border);
+  background: rgba(10, 8, 18, 0.6);
+  border: 1px solid rgba(255, 0, 127, 0.08);
   border-radius: var(--radius-full);
   font-size: 0.8rem;
   font-weight: 600;
   color: hsl(var(--muted));
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 .events-filters__chip:hover {
   border-color: var(--primary);
   color: var(--primary-light);
+  background: rgba(255, 0, 127, 0.06);
+  box-shadow: 0 0 8px rgba(255, 0, 127, 0.1);
 }
 
 .events-filters__chip--active {
-  background: rgba(124, 92, 252, 0.12);
+  background: rgba(255, 0, 127, 0.1);
   border-color: var(--primary);
   color: var(--primary-light);
-  box-shadow: 0 0 12px rgba(125, 92, 252, 0.15);
+  box-shadow: 0 0 12px rgba(255, 0, 127, 0.15), 0 0 24px rgba(125, 92, 252, 0.08);
 }
 
 /* Sort Dropdown */

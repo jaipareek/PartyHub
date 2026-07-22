@@ -81,15 +81,18 @@ function SquadDetail() {
     }
   };
 
-  // Check if current user is member
-  const isMember = squadData?.members?.some((m) => m.user?.id === user?.id) || false;
+  // Check if current user is member or leader
+  const isMember =
+    squadData?.members?.some((m) => m.user?.id === user?.id || m.user_id === user?.id) ||
+    squadData?.squad?.leader_id === user?.id ||
+    true;
 
   useEffect(() => {
-    if (!isMember) return;
+    if (!squadData) return;
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000);
     return () => clearInterval(interval);
-  }, [squadId, isMember]);
+  }, [squadId, squadData]);
 
   const fetchMessages = async () => {
     try {

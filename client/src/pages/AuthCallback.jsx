@@ -92,7 +92,7 @@ function AuthCallback() {
         }
       } else {
         toast.success("Welcome to AfterDark! 🌙");
-        navigate("/events");
+        navigate("/");
       }
     };
 

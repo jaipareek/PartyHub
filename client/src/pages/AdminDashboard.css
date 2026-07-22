@@ -1,88 +1,104 @@
 /* ============================================
-   👑 Admin Dashboard Page Styling
+   👑 Admin Dashboard Page Styling (Spacious & Modern)
    ============================================ */
 .admin-dashboard {
   display: flex;
   min-height: 100vh;
-  background: hsl(240 20% 4%);
+  background: #06050b;
 }
 
 .admin-dashboard__main {
   flex: 1;
-  padding: 40px;
-  max-width: 1200px;
+  padding: 110px 48px 80px 48px;
+  max-width: 1440px;
+  width: 94%;
   margin: 0 auto;
   color: white;
 }
 
 .admin-dashboard__header {
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
 .admin-dashboard__header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  background: var(--gradient-primary);
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 50%, var(--accent-pink) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  margin: 0 0 6px 0;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .admin-dashboard__header p {
-  color: hsl(var(--muted));
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1.05rem;
   margin: 0;
 }
 
 .admin-dashboard__tabs {
   display: flex;
-  gap: 12px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 16px;
-  margin-bottom: 32px;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  padding: 8px;
+  border-radius: 20px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
 }
 
 .admin-dashboard__tab {
   background: none;
-  border: none;
-  color: hsl(var(--muted));
-  font-size: 0.95rem;
-  font-weight: 600;
-  padding: 8px 16px;
+  border: 1px solid transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 12px 22px;
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
+  border-radius: 14px;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .admin-dashboard__tab:hover {
   color: white;
-  background: var(--glass);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .admin-dashboard__tab.active {
-  color: var(--primary-light);
-  background: rgba(124, 92, 252, 0.12);
+  color: white;
+  background: var(--gradient-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(125, 92, 252, 0.35);
 }
 
 .admin-dashboard__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 24px;
+  gap: 28px;
 }
 
 .admin-card {
-  background: var(--glass);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  border-radius: 22px;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-base), border-color var(--transition-base);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .admin-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(124, 92, 252, 0.3);
+  transform: translateY(-3px);
+  border-color: rgba(124, 92, 252, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
 }
 
 .admin-card__title {
@@ -168,4 +184,81 @@
 .admin-dashboard__empty h3 {
   color: white;
   margin-bottom: 8px;
+}
+
+/* ============================================
+   👥 Users & Roles Card Alignment Styling
+   ============================================ */
+.admin-user-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: all 0.25s ease;
+  text-align: left;
+}
+
+.admin-user-card:hover {
+  border-color: rgba(125, 92, 252, 0.4);
+  box-shadow: 0 8px 30px rgba(125, 92, 252, 0.15);
+  transform: translateY(-2px);
+}
+
+.admin-user-role-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.admin-user-role-badge.role-admin {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.admin-user-role-badge.role-venue_owner {
+  background: rgba(180, 74, 252, 0.15);
+  color: var(--accent-purple);
+  border: 1px solid rgba(180, 74, 252, 0.3);
+}
+
+.admin-user-role-badge.role-customer {
+  background: rgba(255, 0, 127, 0.12);
+  color: var(--accent-pink);
+  border: 1px solid rgba(255, 0, 127, 0.25);
+}
+
+.admin-user-student-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.admin-role-select {
+  background: rgba(20, 18, 32, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.admin-role-select:focus,
+.admin-role-select:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 14px rgba(125, 92, 252, 0.3);
 }

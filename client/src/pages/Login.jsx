@@ -20,7 +20,9 @@ function Login() {
       setSubmitting(true);
       await signIn(email, password);
       toast.success("Welcome back! 🌙");
-      navigate("/");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get("redirect");
+      navigate(redirect || "/");
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Failed to sign in. Please check your credentials.");

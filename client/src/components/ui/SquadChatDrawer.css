@@ -1,0 +1,262 @@
+/* ============================================
+   💬 Squad Chat Drawer — Slide-Out Glassmorphic Inbox
+   ============================================ */
+
+.squad-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(3, 2, 6, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.3s ease;
+  pointer-events: auto !important;
+}
+
+.squad-drawer-content {
+  width: 100%;
+  max-width: 440px;
+  height: 100vh;
+  background: rgba(12, 10, 22, 0.95);
+  border-left: 1px solid rgba(255, 0, 127, 0.15);
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  animation: slideInRight 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  pointer-events: auto !important;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Header */
+.squad-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.squad-drawer-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.squad-drawer-icon {
+  font-size: 1.8rem;
+  color: var(--primary-light);
+}
+
+.squad-drawer-header h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+}
+
+.squad-drawer-subtitle {
+  font-size: 0.75rem;
+  color: hsl(var(--muted));
+}
+
+.squad-drawer-close {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  transition: all 0.2s ease;
+}
+
+.squad-drawer-close:hover {
+  background: rgba(255, 0, 127, 0.2);
+  color: var(--accent-pink);
+}
+
+/* Tabs */
+.squad-drawer-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0 14px 0;
+}
+
+.squad-drawer-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  color: hsl(var(--muted));
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.squad-drawer-tab.active {
+  background: rgba(125, 92, 252, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-light);
+}
+
+/* Notice */
+.squad-drawer-notice {
+  font-size: 0.72rem;
+  color: hsl(var(--muted));
+  background: rgba(0, 255, 170, 0.06);
+  border: 1px solid rgba(0, 255, 170, 0.15);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+/* Squad List */
+.squad-drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+}
+
+.squad-drawer-card {
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  transition: all 0.25s ease;
+}
+
+.squad-drawer-card:hover {
+  background: rgba(125, 92, 252, 0.08);
+  border-color: rgba(125, 92, 252, 0.3);
+  transform: translateX(-2px);
+}
+
+.squad-drawer-card.archived {
+  opacity: 0.65;
+}
+
+.squad-drawer-card-poster {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.squad-drawer-card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.squad-drawer-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.squad-drawer-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.squad-drawer-card-top h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.squad-drawer-card-event {
+  font-size: 0.65rem;
+  color: var(--primary-light);
+  background: rgba(255, 0, 127, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.squad-drawer-card-preview {
+  font-size: 0.78rem;
+  color: hsl(var(--muted));
+  margin: 4px 0 6px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.squad-drawer-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: hsl(var(--muted));
+}
+
+.squad-drawer-card-status {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* Empty & Loading */
+.squad-drawer-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: hsl(var(--muted));
+  font-size: 0.88rem;
+}
+
+.squad-drawer-browse-btn {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 18px;
+  background: var(--gradient-primary);
+  color: white;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+
+.squad-drawer-loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.squad-drawer-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}

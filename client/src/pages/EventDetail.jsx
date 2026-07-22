@@ -53,12 +53,23 @@ function EventDetail() {
   const [isSplitPayment, setIsSplitPayment] = useState(false);
   const [splitSquadName, setSplitSquadName] = useState("");
 
+  const [myEventSquad, setMyEventSquad] = useState(null);
+
   const fetchEventSquads = async () => {
     try {
       setFetchingSquads(true);
       const res = await api.get(`/squads/event/${id}`);
       if (res.data?.success) {
         setSquads(res.data.data);
+      }
+
+      // Check if user belongs to an active squad for this event
+      if (user) {
+        const myRes = await api.get("/squads/my/active");
+        if (myRes.data?.success) {
+          const match = myRes.data.data.find((s) => s.event_id === id || s.event?.id === id);
+          if (match) setMyEventSquad(match);
+        }
       }
     } catch (err) {
       console.error("Failed to load squads:", err);
@@ -318,6 +329,28 @@ function EventDetail() {
           <div className="ed-booking-col">
             <div className="ed-booking-card">
               
+              {/* Active Squad Direct Chat Access */}
+              {myEventSquad && (
+                <div className="ed-my-squad-quick-chat" style={{ background: "rgba(125, 92, 252, 0.12)", border: "1px solid rgba(125, 92, 252, 0.3)", borderRadius: "14px", padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                  <div style={{ textDecoration: "none" }}>
+                    <span style={{ fontSize: "0.72rem", color: "var(--primary-light)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>💬 Your Active Party Squad</span>
+                    <h4 style={{ margin: "2px 0 0 0", color: "white", fontSize: "1.05rem", fontWeight: 800 }}>{myEventSquad.name}</h4>
+                    {myEventSquad.last_message && (
+                      <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.78rem" }}>
+                        "{myEventSquad.last_message.user?.full_name?.split(' ')[0]}: {myEventSquad.last_message.message.slice(0, 25)}..."
+                      </p>
+                    )}
+                  </div>
+                  <button 
+                    onClick={() => navigate(`/squads/${myEventSquad.id}`)}
+                    className="ed-pricing__book-btn"
+                    style={{ width: "auto", padding: "8px 18px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  >
+                    💬 Open Squad Chat
+                  </button>
+                </div>
+              )}
+
               <div className="ed-title-row">
                 <h1 className="ed-title">{event.title}</h1>
                 <button className="ed-share-btn" onClick={handleShare} title="Share Link">

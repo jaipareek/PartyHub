@@ -23,6 +23,7 @@ import UserProfile from "./pages/UserProfile";
 import AuthCallback from "./pages/AuthCallback";
 import GateCheckIn from "./pages/GateCheckIn";
 import LoadingScreen from "./components/ui/LoadingScreen";
+import PartyBackground from "./components/ui/PartyBackground";
 import "./App.css";
 
 function App() {
@@ -49,8 +50,13 @@ function App() {
           }}
         />
 
+        {/* 🎆 Persistent Animated Party Background */}
+        <PartyBackground />
+
         {/* Navbar */}
         <Navbar />
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
 
         <Routes>
           {/* Public Routes */}
@@ -81,6 +87,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
+        </div>
       </AuthProvider>
     </Router>
   );

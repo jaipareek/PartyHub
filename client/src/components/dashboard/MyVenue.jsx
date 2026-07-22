@@ -58,13 +58,21 @@ function MyVenue() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
 
+  const [mainCoverUrl, setMainCoverUrl] = useState("");
+  const [galleryUrlsStr, setGalleryUrlsStr] = useState("");
+
   useEffect(() => {
     const fetchVenue = async () => {
       try {
         const res = await api.get("/owner/profile");
         if (res.data.data.venue) {
-          setVenue(res.data.data.venue);
-          setForm(res.data.data.venue);
+          const v = res.data.data.venue;
+          setVenue(v);
+          setForm(v);
+          if (v.images && v.images.length > 0) {
+            setMainCoverUrl(v.images[0] || "");
+            setGalleryUrlsStr(v.images.slice(1).join(", "));
+          }
         }
       } catch (err) {
         console.error("Error fetching venue:", err);
@@ -77,6 +85,17 @@ function MyVenue() {
 
   const handleSave = async () => {
     try {
+      const parsedGallery = (galleryUrlsStr || "")
+        .split(",")
+        .map((u) => u.trim())
+        .filter((u) => u.length > 0);
+
+      const finalImages = [];
+      if (mainCoverUrl.trim()) finalImages.push(mainCoverUrl.trim());
+      parsedGallery.forEach((g) => {
+        if (!finalImages.includes(g)) finalImages.push(g);
+      });
+
       const res = await api.put(`/venues/${venue.id}`, {
         name: form.name,
         description: form.description,
@@ -87,10 +106,16 @@ function MyVenue() {
         phone: form.phone,
         email: form.email,
         website: form.website,
+        images: finalImages.length ? finalImages : venue.images,
       });
       setVenue(res.data.data);
+      setForm(res.data.data);
+      if (res.data.data?.images) {
+        setMainCoverUrl(res.data.data.images[0] || "");
+        setGalleryUrlsStr(res.data.data.images.slice(1).join(", "));
+      }
       setEditing(false);
-      toast.success("Venue profile updated! 🏠");
+      toast.success("Venue profile & gallery updated! 🏠");
     } catch (err) {
       toast.error("Failed to update venue profile");
     }
@@ -193,6 +218,58 @@ function MyVenue() {
                   <p className="my-venue-val" style={{ fontSize: "0.88rem", lineHeight: 1.6, color: "rgba(255,255,255,0.75)" }}>
                     {venue.description || "No description provided."}
                   </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 🖼️ Venue Cover & Gallery Photos Card */}
+          <div className="glass-card">
+            <h3 className="glass-card__title">
+              🖼️ Venue Cover & Gallery Photos
+            </h3>
+
+            <div className="my-venue-fields-list">
+              <div className="create-event__field">
+                <label className="vd-form-lbl">Main Cover Photo URL</label>
+                {editing ? (
+                  <input 
+                    type="url" 
+                    placeholder="https://images.unsplash.com/..." 
+                    value={mainCoverUrl} 
+                    onChange={(e) => setMainCoverUrl(e.target.value)}
+                    style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px", width: "100%" }}
+                  />
+                ) : (
+                  <p className="my-venue-val" style={{ wordBreak: "break-all", fontSize: "0.8rem" }}>{venue.images?.[0] || "Default banner"}</p>
+                )}
+              </div>
+
+              <div className="create-event__field" style={{ marginTop: "16px" }}>
+                <label className="vd-form-lbl">Gallery Photo URLs (Comma-Separated)</label>
+                {editing ? (
+                  <div>
+                    <textarea 
+                      placeholder="https://images.../photo1.jpg, https://images.../photo2.jpg" 
+                      value={galleryUrlsStr} 
+                      onChange={(e) => setGalleryUrlsStr(e.target.value)}
+                      rows={3}
+                      style={{ background: "#1a1a24", border: "1px solid var(--border)", color: "white", padding: "10px 14px", borderRadius: "8px", width: "100%", resize: "none" }}
+                    />
+                    <span style={{ fontSize: "0.72rem", color: "hsl(var(--muted))", marginTop: "4px", display: "block" }}>
+                      💡 Enter photo URLs separated by commas for your VIP lounge, dance floor, bar, etc.
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "8px" }}>
+                    {venue.images && venue.images.length > 1 ? (
+                      venue.images.slice(1).map((img, i) => (
+                        <img key={i} src={img} alt={`Gallery ${i+1}`} style={{ width: "60px", height: "60px", borderRadius: "8px", objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                      ))
+                    ) : (
+                      <span style={{ fontSize: "0.8rem", color: "hsl(var(--muted))" }}>No extra gallery photos added. Click Edit to add photo URLs.</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

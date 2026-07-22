@@ -356,17 +356,6 @@ function Home() {
               <div className="hero__overlay" />
               <div className="hero__fade" />
 
-              {/* Floating Glassmorphic UI snippets */}
-              <div className="floating-badge floating-badge--1">
-                <span>⚡ Live Vibe: Active</span>
-                <span style={{ display: "inline-block", width: "8px", height: "8px", background: "#00ffaa", borderRadius: "50%", boxShadow: "0 0 10px #00ffaa" }} />
-              </div>
-              <div className="floating-badge floating-badge--2">
-                <span>🔥 12k+ Night Owls Online</span>
-              </div>
-              <div className="floating-badge floating-badge--3">
-                <span>🎟️ VIP Table Seating Active</span>
-              </div>
             </div>
 
             <div className="hero__content">
@@ -404,29 +393,73 @@ function Home() {
             </div>
           </section>
 
-          {/* PUBLIC EVENTS TEASER SECTION */}
-          {publicEvents.length > 0 && (
-            <section className="public-events-section">
-              <div className="public-events-section__inner">
-                <h2 className="public-events-title font-display">
-                  🔥 Trending Parties <em>Near You</em>
-                </h2>
-                <p className="public-events-subtitle">
-                  Explore the hottest local nightlife bookings and reserve your spot instantly.
-                </p>
-                <div className="public-events-grid">
-                  {publicEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
+          {/* NIGHTLIFE EXPERIENCE SHOWCASE SECTION */}
+          <section className="nightlife-showcase-section">
+            <div className="nightlife-showcase__inner">
+              <span className="showcase-eyebrow">⚡ REDEFINING NIGHTLIFE</span>
+              <h2 className="showcase-title font-display">
+                Everything You Need for a <em>Wild Night Out</em>
+              </h2>
+              <p className="showcase-subtitle">
+                From instant QR passes to VIP floor table reservations and crew bill splits — AfterDark powers your night.
+              </p>
+
+              {/* 3 Holographic Feature Cards */}
+              <div className="showcase-cards-grid">
+                <div className="party-feature-card party-feature-card--pink">
+                  <div className="party-feature-icon">🎟️</div>
+                  <h3>Instant Passes & QR Entry</h3>
+                  <p>Book event tickets in seconds. Get glowing digital QR passes straight to your mobile wallet for zero-wait door check-in.</p>
+                  <span className="party-feature-badge">⚡ Instant Pass</span>
                 </div>
-                <div className="public-events-cta">
-                  <Link to="/signup" className="public-events-btn">
-                    Join AfterDark to Book Passes <HiArrowRight style={{ marginLeft: "6px" }} />
-                  </Link>
+
+                <div className="party-feature-card party-feature-card--cyan">
+                  <div className="party-feature-icon">🍾</div>
+                  <h3>VIP Table Floor Maps</h3>
+                  <p>Explore real-time interactive floor plan maps of top clubs. Pick your exact sofa, review minimum spends, and lock VIP bottle service.</p>
+                  <span className="party-feature-badge party-feature-badge--cyan">🥂 Floor Seat Map</span>
+                </div>
+
+                <div className="party-feature-card party-feature-card--violet">
+                  <div className="party-feature-icon">👥</div>
+                  <h3>Crew Squad Bill Splitting</h3>
+                  <p>No more chasing money via transfers. Create a party squad, split ticket and table tabs fractionally, and track member payments live.</p>
+                  <span className="party-feature-badge party-feature-badge--violet">👥 Bill Splitter</span>
                 </div>
               </div>
-            </section>
-          )}
+
+              {/* Live Vibe Radar Teaser */}
+              <div className="showcase-vibe-radar">
+                <div className="radar-header">
+                  <span className="radar-pulse-dot" />
+                  <span>LIVE CITY VIBE RADAR</span>
+                </div>
+                <div className="radar-items">
+                  <div className="radar-item">
+                    <span className="radar-emoji">🔥</span>
+                    <div>
+                      <strong>Illuzion Nightclub</strong>
+                      <span className="radar-status">98% Capacity • Techno Night</span>
+                    </div>
+                  </div>
+                  <div className="radar-item">
+                    <span className="radar-emoji">🎧</span>
+                    <div>
+                      <strong>Mirage Sky Lounge</strong>
+                      <span className="radar-status">Live DJ Set • VIP Open</span>
+                    </div>
+                  </div>
+                  <div className="radar-item">
+                    <span className="radar-emoji">🥂</span>
+                    <div>
+                      <strong>Prism Club</strong>
+                      <span className="radar-status">Stag & Couple Passes Open</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </>
       ) : profile?.role === "venue_owner" ? (
         
@@ -664,27 +697,51 @@ function Home() {
                 )}
               </div>
 
-              {/* Joined Crews list */}
+              {/* 💬 Quick Squad Chat Hub Inbox */}
               <div className="glass-card" style={{ marginTop: "24px" }}>
-                <h3 className="glass-card__title">
-                  <HiUsers style={{ color: "var(--primary-light)", fontSize: "1.2rem" }} /> Active Crews
-                </h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <h3 className="glass-card__title" style={{ margin: 0 }}>
+                    <HiUsers style={{ color: "var(--primary-light)", fontSize: "1.2rem" }} /> Squad Chat Inbox 💬
+                  </h3>
+                  <span style={{ fontSize: "0.7rem", color: "var(--success)", background: "rgba(0, 255, 170, 0.1)", padding: "2px 8px", borderRadius: "12px", border: "1px solid rgba(0, 255, 170, 0.2)" }}>
+                    🧹 Auto-Cleans 48h
+                  </span>
+                </div>
+
+                <p style={{ margin: "0 0 16px 0", fontSize: "0.78rem", color: "hsl(var(--muted))" }}>
+                  Quick access to all your active event squad group chats. Chats inactive for over 48 hours automatically archive.
+                </p>
                 
                 {mySquads.length === 0 ? (
                   <div className="empty-panel">
-                    <p>No active squads. Invite friends and coordinate bookings!</p>
-                    <Link to="/events" className="empty-panel__btn">Find a party</Link>
+                    <p>No active squad chats. Join or launch a squad to start chatting!</p>
+                    <Link to="/events" className="empty-panel__btn">Find a Party Squad</Link>
                   </div>
                 ) : (
                   <div className="squads-mini-list">
                     {mySquads.map((squad) => (
-                      <div key={squad.id} className="squad-mini-card">
-                        <div>
-                          <h4>{squad.name}</h4>
-                          <span>🎉 Event: {squad.event?.title?.slice(0, 22)}...</span>
+                      <div key={squad.id} className="squad-mini-card" style={{ padding: "14px 16px", borderRadius: "14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <h4 style={{ margin: 0, color: "white", fontSize: "0.95rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{squad.name}</h4>
+                            <span style={{ fontSize: "0.65rem", background: "rgba(125, 92, 252, 0.2)", color: "var(--primary-light)", padding: "2px 6px", borderRadius: "4px" }}>
+                              {squad.event?.title ? squad.event.title.slice(0, 15) + "..." : "Party"}
+                            </span>
+                          </div>
+                          <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.78rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {squad.last_message ? (
+                              <span>💬 <strong>{squad.last_message.user?.full_name?.split(' ')[0]}:</strong> {squad.last_message.message}</span>
+                            ) : (
+                              <span>✨ No messages yet. Say hi to your squad!</span>
+                            )}
+                          </p>
                         </div>
-                        <Link to={`/squads/${squad.id}`} className="squad-mini-card__btn">
-                          Open Chat
+                        <Link 
+                          to={`/squads/${squad.id}`} 
+                          className="pass-mini-card__btn"
+                          style={{ textDecoration: "none", padding: "8px 14px", fontSize: "0.8rem", whiteSpace: "nowrap" }}
+                        >
+                          💬 Chat Now
                         </Link>
                       </div>
                     ))}
@@ -870,30 +927,7 @@ function Home() {
         </div>
       )}
 
-      {/* 3. CORE STATISTICS SECTION */}
-      {!isAuthenticated && (
-        <section className="stats-section">
-          <div className="stats-section__inner">
-            {[
-              { value: "500+", label: "Events Listed" },
-              { value: "200+", label: "Premium Venues" },
-              { value: "50K+", label: "Night Owls" },
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                className="stat-card"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.15 }}
-              >
-                <span className="stat-card__value">{stat.value}</span>
-                <span className="stat-card__label">{stat.label}</span>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      )}
+
 
       {/* 4. FOOTER SECTIONS */}
       <footer className="site-footer" ref={marqueeRef}>
@@ -912,28 +946,7 @@ function Home() {
           </div>
         </div>
 
-        <div className="footer__cta">
-          <motion.button
-            className="footer__cta-btn"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/events")}
-          >
-            <span className="footer__cta-gradient" />
-            <span className="footer__cta-inner">
-              <HiSparkles /> Explore Events
-            </span>
-          </motion.button>
-        </div>
-
         <div className="footer__bar">
-          <div className="footer__social">
-            {["Instagram", "Twitter", "Discord"].map((name) => (
-              <a key={name} href="#" className="footer__social-link">
-                {name}
-              </a>
-            ))}
-          </div>
           <div className="footer__status">
             <span className="footer__status-dot" />
             <span>Available for bookings</span>

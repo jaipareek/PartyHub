@@ -41,6 +41,7 @@ function VenueSetup() {
   const [openTime, setOpenTime] = useState("18:00");
   const [closeTime, setCloseTime] = useState("02:00");
   const [imageUrl, setImageUrl] = useState("");
+  const [galleryUrls, setGalleryUrls] = useState("");
   const [amenities, setAmenities] = useState([]);
 
   const toggleAmenity = (a) => {
@@ -65,12 +66,27 @@ function VenueSetup() {
     try {
       setLoading(true);
 
+      const parsedGallery = galleryUrls
+        .split(",")
+        .map((url) => url.trim())
+        .filter((url) => url.length > 0);
+
+      const finalImages = [];
+      if (imageUrl.trim()) finalImages.push(imageUrl.trim());
+      parsedGallery.forEach((g) => {
+        if (!finalImages.includes(g)) finalImages.push(g);
+      });
+
+      if (finalImages.length === 0) {
+        finalImages.push("https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=1200");
+      }
+
       await api.post("/venues", {
         name, description, category, address, city, state,
         phone, email: venueEmail, website,
         opening_time: openTime ? `${openTime}:00` : null,
         closing_time: closeTime ? `${closeTime}:00` : null,
-        images: imageUrl ? [imageUrl] : ["https://images.unsplash.com/photo-1566417713940-fe7c8460ffd3?w=1200"],
+        images: finalImages,
         amenities,
       });
 
@@ -178,8 +194,15 @@ function VenueSetup() {
                 <input type="url" placeholder="https://skyline.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
               </div>
               <div className="setup-field col-span-2">
-                <label>Cover Photo URL</label>
-                <input type="url" placeholder="https://images.unsplash.com/..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+                <label>Main Cover Photo URL</label>
+                <input type="url" placeholder="https://images.unsplash.com/photo-main..." value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+              </div>
+              <div className="setup-field col-span-2">
+                <label>Additional Gallery Photo URLs (Comma-Separated)</label>
+                <input type="text" placeholder="https://images.../photo1.jpg, https://images.../photo2.jpg" value={galleryUrls} onChange={(e) => setGalleryUrls(e.target.value)} />
+                <span style={{ fontSize: "0.72rem", color: "hsl(var(--muted))", marginTop: "4px", display: "block" }}>
+                  💡 Add multiple photo URLs separated by commas for your venue gallery (interior, VIP lounge, stage, bar).
+                </span>
               </div>
             </div>
           </div>

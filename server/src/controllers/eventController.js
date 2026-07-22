@@ -200,9 +200,17 @@ export const searchEvents = async (req, res) => {
       case "popularity":
         query = query.order("booked_count", { ascending: false });
         break;
+      case "date_desc":
+      case "latest":
+        query = query.order("date", { ascending: false }).order("start_time", { ascending: false });
+        break;
+      case "newly_added":
+        query = query.order("created_at", { ascending: false });
+        break;
+      case "date_asc":
       case "date":
       default:
-        query = query.order("date", { ascending: true });
+        query = query.order("date", { ascending: true }).order("start_time", { ascending: true });
         break;
     }
 

@@ -1,5 +1,5 @@
 /* ============================================
-   🌙 Loading Screen
+   🌙 Loading Screen — Party-Grade
    ============================================ */
 .loading-screen {
   position: fixed;
@@ -9,6 +9,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+/* Ambient orbs behind loading */
+.loading-screen::before,
+.loading-screen::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.loading-screen::before {
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 0, 127, 0.1);
+  top: -10%;
+  right: -5%;
+  animation: orb-drift-1 10s ease-in-out infinite alternate;
+}
+
+.loading-screen::after {
+  width: 300px;
+  height: 300px;
+  background: rgba(0, 240, 255, 0.08);
+  bottom: -5%;
+  left: -5%;
+  animation: orb-drift-2 12s ease-in-out infinite alternate;
 }
 
 /* Top-left label */
@@ -21,9 +51,10 @@
   text-transform: uppercase;
   letter-spacing: 0.3em;
   font-weight: 500;
+  text-shadow: 0 0 10px rgba(255, 0, 127, 0.3);
 }
 
-/* Center rotating word */
+/* Center rotating word — neon glow */
 .loading-words {
   display: flex;
   align-items: center;
@@ -35,8 +66,12 @@
   font-family: var(--font-display);
   font-style: italic;
   font-size: clamp(2.5rem, 7vw, 5rem);
-  color: hsl(var(--text) / 0.8);
+  color: hsl(var(--text) / 0.9);
   display: block;
+  text-shadow:
+    0 0 10px rgba(255, 0, 127, 0.4),
+    0 0 20px rgba(125, 92, 252, 0.2),
+    0 0 40px rgba(0, 240, 255, 0.15);
 }
 
 /* Bottom-right counter */
@@ -49,21 +84,46 @@
   color: hsl(var(--text));
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0.7;
 }
 
-/* Progress bar */
+/* Progress bar — comet tail effect */
 .loading-progress-track {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: hsl(var(--stroke) / 0.5);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .loading-progress-fill {
   height: 100%;
   transform-origin: left;
   transition: transform 50ms linear;
-  box-shadow: 0 0 8px rgba(124, 92, 252, 0.35);
+  position: relative;
+  box-shadow:
+    0 0 8px rgba(255, 0, 127, 0.4),
+    0 0 16px rgba(125, 92, 252, 0.25),
+    0 0 30px rgba(0, 240, 255, 0.15);
+}
+
+/* Comet tail glow at the leading edge */
+.loading-progress-fill::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -2px;
+  width: 8px;
+  height: 9px;
+  border-radius: 50%;
+  background: white;
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.8),
+    0 0 12px rgba(255, 0, 127, 0.5),
+    0 0 20px rgba(0, 240, 255, 0.3);
 }

@@ -20,18 +20,50 @@
   align-items: center;
   gap: 4px;
   border-radius: var(--radius-full);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: hsl(var(--surface) / 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 0, 127, 0.08);
+  background: rgba(6, 5, 12, 0.75);
   padding: 6px 8px;
   pointer-events: all;
   transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle animated gradient border shimmer */
+.pill-navbar__inner::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 0, 127, 0.15),
+    rgba(125, 92, 252, 0.1),
+    rgba(0, 240, 255, 0.15),
+    rgba(125, 92, 252, 0.1),
+    rgba(255, 0, 127, 0.15)
+  );
+  background-size: 300% 100%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: navbar-border-shift 8s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes navbar-border-shift {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
 }
 
 .pill-navbar__inner.scrolled {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 10px rgba(255, 0, 127, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(6, 5, 12, 0.88);
 }
 
 /* ── Logo ── */
@@ -94,16 +126,32 @@
   border-radius: var(--radius-full);
   transition: all var(--transition-fast);
   white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
 
 .pill-navbar__link:hover {
   color: hsl(var(--text));
-  background: hsl(var(--stroke) / 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .pill-navbar__link.active {
   color: hsl(var(--text));
-  background: hsl(var(--stroke) / 0.5);
+  background: rgba(255, 0, 127, 0.08);
+}
+
+/* Glowing neon dot under active link */
+.pill-navbar__link.active::after {
+  content: "";
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary), 0 0 12px rgba(255, 0, 127, 0.3);
 }
 
 /* ── CTA Button ── */

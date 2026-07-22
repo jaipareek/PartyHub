@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -15,7 +16,10 @@ import {
   HiMusicalNote,
   HiStar,
   HiMiniInformationCircle,
-  HiPhoto
+  HiPhoto,
+  HiXMark,
+  HiChevronLeft,
+  HiChevronRight
 } from "react-icons/hi2";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -128,6 +132,10 @@ function VenueDetail() {
   const [tableCode, setTableCode] = useState("");
   const [bookedTables, setBookedTables] = useState([]);
 
+  // Fullscreen Lightbox Photo Gallery states
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [activePhotoIdx, setActivePhotoIdx] = useState(0);
+
   // Live Vibe Check state
   const [liveVibe, setLiveVibe] = useState({
     densityPercent: 25,
@@ -145,6 +153,18 @@ function VenueDetail() {
       setBookedTables([]);
     }
   }, [id, reserveDate]);
+
+  // Handle Keyboard navigation for Lightbox (Must be called before conditional returns)
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : 0));
+      if (e.key === "ArrowRight") setActivePhotoIdx((prev) => prev + 1);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen]);
 
   const fetchBookedTables = async () => {
     try {
@@ -296,17 +316,12 @@ function VenueDetail() {
   const events = venue.events || [];
   const activeEvents = events.filter((e) => e.is_active);
 
-  const heroImage =
-    venue.images && venue.images.length > 0
-      ? venue.images[0]
-      : "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800";
-
   // Build Google Maps link
   const mapsUrl =
     venue.latitude && venue.longitude
       ? `https://www.google.com/maps?q=${venue.latitude},${venue.longitude}`
       : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          venue.address + ", " + venue.city
+          (venue.address || "") + ", " + (venue.city || "")
         )}`;
 
   const formatTime = (time) => {
@@ -343,16 +358,37 @@ function VenueDetail() {
     densityColor = "#f97316"; // Orange
   }
 
+  // Sanitize and filter non-empty image URLs from venue.images
+  const validVenueImages = (venue.images || []).filter(
+    (img) => typeof img === "string" && img.trim().length > 0
+  );
+
+  const heroImage =
+    validVenueImages.length > 0
+      ? validVenueImages[0]
+      : "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800";
+
   // Fallback gallery images
   const fallbackGallery = [
-    "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400",
-    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400",
-    "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=400",
-    "https://images.unsplash.com/photo-1545128485-c400e7702796?w=400"
+    "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200",
+    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200",
+    "https://images.unsplash.com/photo-1506157786151-b8491531f063?w=1200",
+    "https://images.unsplash.com/photo-1545128485-c400e7702796?w=1200"
   ];
-  const galleryImages = venue.images && venue.images.length > 1 
-    ? venue.images.slice(1, 5) 
-    : fallbackGallery;
+
+  // All photos array (Cover image + extra uploaded venue photos or fallbacks)
+  const allPhotos =
+    validVenueImages.length > 0
+      ? validVenueImages
+      : [heroImage, ...fallbackGallery];
+
+  // Preview photos array (top 4 for grid display)
+  const previewPhotos = allPhotos.slice(0, 4);
+
+  const openLightbox = (index) => {
+    setActivePhotoIdx(index);
+    setLightboxOpen(true);
+  };
 
   const handleFavoriteClick = () => {
     setIsFavorited(!isFavorited);
@@ -568,18 +604,24 @@ function VenueDetail() {
 
               <h3 className="vd-sub-title" style={{ marginTop: "40px" }}>Venue Gallery</h3>
               <div className="vd-gallery-grid">
-                {galleryImages.map((img, idx) => (
-                  <div key={idx} className="vd-gallery-thumb">
-                    <img src={img} alt={`Gallery ${idx + 1}`} />
+                {previewPhotos.map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className="vd-gallery-thumb" 
+                    onClick={() => openLightbox(idx)}
+                    title="Click to expand photo"
+                  >
+                    <img src={img} alt={`Venue Gallery Photo ${idx + 1}`} />
                   </div>
                 ))}
               </div>
 
               <button 
+                type="button"
                 className="vd-gallery-btn"
-                onClick={() => toast("Gallery viewing coming soon! 📸")}
+                onClick={() => openLightbox(0)}
               >
-                <HiPhoto /> View All Photos
+                <HiPhoto /> View All Photos ({allPhotos.length})
               </button>
             </div>
 
@@ -998,6 +1040,78 @@ function VenueDetail() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* 📸 Fullscreen Interactive Lightbox Photo Gallery Modal */}
+      {lightboxOpen && createPortal(
+        <div className="vd-lightbox-overlay" onClick={() => setLightboxOpen(false)}>
+          <div className="vd-lightbox-modal" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="vd-lightbox-header">
+              <div className="vd-lightbox-counter">
+                <span className="vd-lightbox-title">🖼️ {venue.name} Photo Gallery</span>
+                <span className="vd-lightbox-badge">
+                  Photo {activePhotoIdx + 1} of {allPhotos.length}
+                </span>
+              </div>
+              <button 
+                type="button" 
+                className="vd-lightbox-close" 
+                onClick={() => setLightboxOpen(false)}
+                title="Close (ESC)"
+              >
+                <HiXMark />
+              </button>
+            </div>
+
+            {/* Main Stage */}
+            <div className="vd-lightbox-stage">
+              <button 
+                type="button"
+                className="vd-lightbox-nav prev" 
+                onClick={() => setActivePhotoIdx((prev) => (prev > 0 ? prev - 1 : allPhotos.length - 1))}
+                title="Previous Photo (Left Arrow)"
+              >
+                <HiChevronLeft />
+              </button>
+
+              <div className="vd-lightbox-img-wrapper">
+                <img 
+                  src={allPhotos[activePhotoIdx]} 
+                  alt={`Venue Photo ${activePhotoIdx + 1}`} 
+                  className="vd-lightbox-img"
+                  onError={(e) => {
+                    e.target.src = "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200";
+                  }}
+                />
+              </div>
+
+              <button 
+                type="button"
+                className="vd-lightbox-nav next" 
+                onClick={() => setActivePhotoIdx((prev) => (prev < allPhotos.length - 1 ? prev + 1 : 0))}
+                title="Next Photo (Right Arrow)"
+              >
+                <HiChevronRight />
+              </button>
+            </div>
+
+            {/* Bottom Scrollable Thumbnails Strip */}
+            <div className="vd-lightbox-thumbs-bar">
+              {allPhotos.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`vd-lightbox-thumb-btn ${idx === activePhotoIdx ? "active" : ""}`}
+                  onClick={() => setActivePhotoIdx(idx)}
+                >
+                  <img src={img} alt={`Thumb ${idx + 1}`} />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

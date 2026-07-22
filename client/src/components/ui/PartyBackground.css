@@ -1,0 +1,124 @@
+/* ============================================
+   🎆 PartyBackground — Optimized Party Layer
+   ============================================ */
+
+.party-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background: radial-gradient(circle at 10% 10%, rgba(255, 0, 127, 0.06) 0%, transparent 40%),
+              radial-gradient(circle at 90% 90%, rgba(0, 240, 255, 0.05) 0%, transparent 45%),
+              radial-gradient(circle at 50% 50%, rgba(125, 92, 252, 0.05) 0%, transparent 50%);
+}
+
+/* ── Particle Canvas ── */
+.party-bg__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.6;
+}
+
+/* ── Laser Beams (Lightweight GPU accelerated transform) ── */
+.party-bg__laser {
+  position: absolute;
+  width: 150%;
+  height: 1px;
+  transform-origin: center center;
+  opacity: 0;
+  animation: laser-sweep 14s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.party-bg__laser--1 {
+  top: 30%;
+  left: -25%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 0, 127, 0.5) 50%,
+    transparent 100%
+  );
+  animation-delay: 0s;
+}
+
+.party-bg__laser--2 {
+  top: 60%;
+  left: -25%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 240, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation-delay: 5s;
+}
+
+.party-bg__laser--3 {
+  top: 80%;
+  left: -25%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(125, 92, 252, 0.4) 50%,
+    transparent 100%
+  );
+  animation-delay: 9s;
+}
+
+@keyframes laser-sweep {
+  0% {
+    transform: rotate(-10deg) translate3d(-10%, 0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.4;
+  }
+  50% {
+    transform: rotate(5deg) translate3d(10%, 0, 0);
+    opacity: 0.2;
+  }
+  80% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotate(-10deg) translate3d(-10%, 0, 0);
+    opacity: 0;
+  }
+}
+
+/* ── Lightweight Ambient Glowing Orbs ── */
+.party-bg__orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.party-bg__orb--1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 0, 127, 0.08) 0%, transparent 70%);
+  top: -5%;
+  right: -5%;
+}
+
+.party-bg__orb--2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(0, 240, 255, 0.06) 0%, transparent 70%);
+  bottom: -5%;
+  left: -5%;
+}
+
+.party-bg__orb--3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(125, 92, 252, 0.06) 0%, transparent 70%);
+  top: 40%;
+  left: 45%;
+}
+

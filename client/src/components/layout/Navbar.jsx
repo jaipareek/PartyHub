@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { HiArrowRightOnRectangle, HiBell, HiTrash } from "react-icons/hi2";
+import { HiArrowRightOnRectangle, HiBell, HiTrash, HiChatBubbleLeftRight } from "react-icons/hi2";
+import SquadChatDrawer from "../ui/SquadChatDrawer";
 import api from "../../lib/api";
 import toast from "react-hot-toast";
 import "./Navbar.css";
@@ -18,9 +19,10 @@ function Navbar() {
   const navigate = useNavigate();
   const { user, isAuthenticated, signOut, profile } = useAuth();
 
-  // Notification states
+  // Notification & Squad Chat states
   const [notifications, setNotifications] = useState([]);
   const [showNotifDrawer, setShowNotifDrawer] = useState(false);
+  const [showSquadChatDrawer, setShowSquadChatDrawer] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -94,10 +96,14 @@ function Navbar() {
     return user?.email?.[0]?.toUpperCase() || "?";
   };
 
-  const activeLinks = [...NAV_LINKS];
-  if (isAuthenticated && profile?.role === "customer") {
-    activeLinks.push({ label: "My Tickets", path: "/my-bookings" });
-  }
+  const activeLinks = isAuthenticated
+    ? [
+        { label: "Home", path: "/" },
+        { label: "Events", path: "/events" },
+        { label: "Venues", path: "/venues" },
+        ...(profile?.role === "customer" ? [{ label: "My Tickets", path: "/my-bookings" }] : []),
+      ]
+    : [{ label: "Home", path: "/" }];
 
   return (
     <nav className="pill-navbar">
@@ -130,6 +136,18 @@ function Navbar() {
         {/* Auth Section */}
         {isAuthenticated ? (
           <div className="pill-navbar__user">
+            {/* Squad Chat Inbox Trigger */}
+            <div className="pill-navbar__notif-wrapper">
+              <button
+                type="button"
+                className="pill-navbar__notif-btn"
+                onClick={() => setShowSquadChatDrawer(!showSquadChatDrawer)}
+                title="Party Squad Chats"
+              >
+                <HiChatBubbleLeftRight style={{ fontSize: "1.3rem", color: showSquadChatDrawer ? "var(--primary-light)" : "white" }} />
+              </button>
+            </div>
+
             {/* Bell Icon & Notification Trigger */}
             <div className="pill-navbar__notif-wrapper">
               <button
@@ -185,6 +203,7 @@ function Navbar() {
         )}
       </div>
 
+      {/* Notifications Drawer */}
       {showNotifDrawer && isAuthenticated && (
         <div className="pill-navbar__notif-drawer">
           <div className="pill-navbar__notif-header">
@@ -222,6 +241,12 @@ function Navbar() {
           </div>
         </div>
       )}
+
+      {/* 💬 Squad Chat Slide-Out Drawer */}
+      <SquadChatDrawer 
+        isOpen={showSquadChatDrawer} 
+        onClose={() => setShowSquadChatDrawer(false)} 
+      />
     </nav>
   );
 }

@@ -22,10 +22,12 @@ const CATEGORIES = [
 ];
 
 const SORT_OPTIONS = [
-  { value: "date", label: "Date" },
+  { value: "date_asc", label: "Date: Soonest (Upcoming)" },
+  { value: "date_desc", label: "Date: Latest / Newest First" },
+  { value: "newly_added", label: "Newly Added First" },
   { value: "price_asc", label: "Price: Low → High" },
   { value: "price_desc", label: "Price: High → Low" },
-  { value: "popularity", label: "Popularity" },
+  { value: "popularity", label: "Popularity (Most Booked)" },
 ];
 
 function Events() {
@@ -33,11 +35,9 @@ function Events() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy] = useState("date_asc");
 
   // 🧠 LEARN: useRef for debounce timer
-  // We store the timeout ID so we can cancel it if the user types again
-  // before the 300ms delay finishes. This prevents flooding the API.
   const debounceRef = useRef(null);
 
   // ── Fetch events from API ──
@@ -47,32 +47,28 @@ function Events() {
       const params = {};
       if (query) params.q = query;
       if (category) params.category = category;
-      // Send sort to API only for date and popularity (server-side)
-      if (sort === "popularity") params.sort = "popularity";
-      else params.sort = "date";
+      if (sort) params.sort = sort;
 
       const res = await api.get("/events/search", { params });
       let data = res.data.data || [];
 
-      // 🧠 LEARN: Client-side sorting for price
-      // Supabase can't easily sort by a JSONB nested field,
-      // so we sort price client-side after fetching
+      // Client-side sorting for price
       if (sort === "price_asc") {
         data.sort((a, b) => {
-          const priceA = a.pricing
+          const priceA = a.pricing && a.pricing.length
             ? Math.min(...a.pricing.map((p) => p.price))
             : 0;
-          const priceB = b.pricing
+          const priceB = b.pricing && b.pricing.length
             ? Math.min(...b.pricing.map((p) => p.price))
             : 0;
           return priceA - priceB;
         });
       } else if (sort === "price_desc") {
         data.sort((a, b) => {
-          const priceA = a.pricing
+          const priceA = a.pricing && a.pricing.length
             ? Math.min(...a.pricing.map((p) => p.price))
             : 0;
-          const priceB = b.pricing
+          const priceB = b.pricing && b.pricing.length
             ? Math.min(...b.pricing.map((p) => p.price))
             : 0;
           return priceB - priceA;
@@ -90,7 +86,7 @@ function Events() {
 
   // ── Initial load ──
   useEffect(() => {
-    fetchEvents("", "", "date");
+    fetchEvents("", "", "date_asc");
     window.scrollTo(0, 0);
   }, [fetchEvents]);
 
@@ -125,8 +121,8 @@ function Events() {
   const clearFilters = () => {
     setSearchQuery("");
     setActiveCategory("");
-    setSortBy("date");
-    fetchEvents("", "", "date");
+    setSortBy("date_asc");
+    fetchEvents("", "", "date_asc");
   };
 
   // ── Clear search ──
