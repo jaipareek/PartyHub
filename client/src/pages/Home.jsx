@@ -46,38 +46,27 @@ const MATCHMAKER_GROUPS = [
   { value: "squad", label: "Full Squad 👥" },
 ];
 
-// ── HLS Video Background Component ──
-function HlsVideo({ className, flip = false }) {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    let hls;
-    if (Hls.isSupported()) {
-      hls = new Hls({ enableWorker: false });
-      hls.loadSource(HLS_URL);
-      hls.attachMedia(video);
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = HLS_URL;
-    }
-
-    return () => {
-      if (hls) hls.destroy();
-    };
-  }, []);
-
+// ── Moving Animated Party Video Background Component ──
+function VideoBackground({ className = "hero__video", flip = false }) {
   return (
     <video
-      ref={videoRef}
       className={className}
       autoPlay
       muted
       loop
       playsInline
-      style={flip ? { transform: "scaleY(-1)" } : undefined}
-    />
+      preload="auto"
+      poster="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1600"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        ...(flip ? { transform: "scaleY(-1)" } : {})
+      }}
+    >
+      <source src="/videos/hero-bg.mp4" type="video/mp4" />
+      <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260319_055001_8e16d972-3b2b-441c-86ad-2901a54682f9.mp4" type="video/mp4" />
+    </video>
   );
 }
 
@@ -397,10 +386,14 @@ function Home() {
         <>
           <section className="hero" ref={heroRef}>
             <div className="hero__video-wrap">
-              <HlsVideo className="hero__video" />
+              <VideoBackground className="hero__video" />
               <div className="hero__overlay" />
               <div className="hero__fade" />
+            </div>
 
+            <div className="hero__ambient-glow" aria-hidden="true">
+              <div className="hero__glow-orb hero__glow-orb--1" />
+              <div className="hero__glow-orb hero__glow-orb--2" />
             </div>
 
             <div className="hero__content">
@@ -443,7 +436,7 @@ function Home() {
             <div className="nightlife-showcase__inner">
               <span className="showcase-eyebrow">⚡ REDEFINING NIGHTLIFE</span>
               <h2 className="showcase-title font-display">
-                Everything You Need for a <em>Wild Night Out</em>
+                Everything You Need for an <em>Unforgettable Night</em>
               </h2>
               <p className="showcase-subtitle">
                 From instant QR passes to VIP floor table reservations and crew bill splits — AfterDark powers your night.
@@ -976,7 +969,7 @@ function Home() {
       {/* 4. FOOTER SECTIONS */}
       <footer className="site-footer" ref={marqueeRef}>
         <div className="footer__video-wrap">
-          <HlsVideo className="hero__video" flip />
+          <VideoBackground className="hero__video" flip />
           <div className="footer__overlay" />
         </div>
 
