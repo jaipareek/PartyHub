@@ -28,21 +28,93 @@ export default function PayLockCard({ paylock, squad, onUpdate }) {
 
     try {
       setPaying(true);
-      const res = await api.post(`/paylock/${paylock.id}/pay-share`, {
+
+      // 1. Create Razorpay order for squad contribution
+      const orderRes = await api.post("/payment/create-order", {
         amount: val,
-        squad_id: squad?.id,
+        receipt: `paylock_${paylock.id}_${Date.now()}`,
+        notes: { squad_id: squad?.id, paylock_id: paylock.id }
       });
 
-      if (res.data?.success) {
-        toast.success(res.data.message || `Paid ₹${val.toLocaleString("en-IN")} towards PayLock! 🎉`);
-        setShowCustomInput(false);
-        setCustomAmount("");
-        if (onUpdate) onUpdate();
+      if (!orderRes.data?.success) {
+        throw new Error(orderRes.data?.error || "Could not create Razorpay order");
       }
+
+      const orderData = orderRes.data.data;
+
+      const submitPayShare = async (paymentId) => {
+        const res = await api.post(`/paylock/${paylock.id}/pay-share`, {
+          amount: val,
+          squad_id: squad?.id,
+          payment_id: paymentId,
+        });
+
+        if (res.data?.success) {
+          toast.success(res.data.message || `Paid ₹${val.toLocaleString("en-IN")} towards PayLock via Razorpay! 🎉`);
+          setShowCustomInput(false);
+          setCustomAmount("");
+          if (onUpdate) onUpdate();
+        }
+      };
+
+      // 2. Open Razorpay SDK Popup Window
+      if (window.Razorpay && orderData) {
+        const options = {
+          key: orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_THbll1AUnRwRMQ",
+          amount: orderData.amount,
+          currency: orderData.currency || "INR",
+          name: "AfterDark Squad PayLock",
+          description: `PayLock Share — ${paylock.item_title || "Squad Booking"}`,
+          order_id: orderData.is_mock ? undefined : orderData.id,
+          theme: { color: "#ff007f" },
+          handler: async function (response) {
+            try {
+              const verifyRes = await api.post("/payment/verify", {
+                razorpay_order_id: response.razorpay_order_id || orderData.id,
+                razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                razorpay_signature: response.razorpay_signature,
+                is_mock: orderData.is_mock
+              });
+              if (verifyRes.data?.success) {
+                await submitPayShare(verifyRes.data.payment_id || response.razorpay_payment_id);
+              } else {
+                toast.error("Razorpay payment verification failed");
+              }
+            } catch (vErr) {
+              console.error("PayLock signature error:", vErr);
+              toast.error("Payment verification failed");
+            } finally {
+              setPaying(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setPaying(false);
+              toast("Payment window closed", { icon: "ℹ️" });
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        // Fallback test mode verification
+        const verifyRes = await api.post("/payment/verify", {
+          razorpay_order_id: orderData.id,
+          razorpay_payment_id: `pay_test_${Date.now()}`,
+          razorpay_signature: "test_signature",
+          is_mock: true
+        });
+
+        if (verifyRes.data?.success) {
+          await submitPayShare(verifyRes.data.payment_id);
+        }
+        setPaying(false);
+      }
+
     } catch (err) {
       console.error("PayLock payment error:", err);
-      toast.error(err.response?.data?.error || "Failed to submit payment share");
-    } finally {
+      toast.error(err.response?.data?.error || err.message || "Failed to submit payment share");
       setPaying(false);
     }
   };

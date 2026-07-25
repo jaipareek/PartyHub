@@ -22,6 +22,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import tableRoutes from "./routes/tableRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import paylockRoutes from "./routes/paylockRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 // Load environment variables from .env file FIRST
 dotenv.config();
@@ -120,6 +121,9 @@ app.use("/api/owner/analytics", analyticsRoutes);
 
 // ✅ PayLock Group Bill-Splitter routes
 app.use("/api/paylock", paylockRoutes);
+
+// ✅ Razorpay Payment routes
+app.use("/api/payment", paymentRoutes);
 
 // TODO: Day 13 — Booking routes
 // app.use("/api/bookings", bookingRoutes);

@@ -100,8 +100,8 @@ function EventCard({ event }) {
       {/* ── Event Poster Image ── */}
       <div className="event-card__image-wrapper">
         <img
-          src={poster_url}
-          alt={title}
+          src={(poster_url && typeof poster_url === "string" && poster_url.trim() !== "") ? poster_url : "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500"}
+          alt={title || "Event Poster"}
           className="event-card__image"
           loading="lazy"
         />

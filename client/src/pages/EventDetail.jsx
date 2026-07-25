@@ -115,32 +115,21 @@ function EventDetail() {
     setCheckoutOpen(true);
   };
 
-  const handleCheckoutSubmit = async (e) => {
-    e.preventDefault();
-    if (isSplitPayment && !splitSquadName.trim()) {
-      toast.error("Please enter a Squad Name for the split checkout");
-      return;
-    }
-    if (!cardNumber || !expiry || !cvv) {
-      toast.error("Please fill in all payment details");
-      return;
-    }
-
+  const processBookingConfirmation = async (paymentId) => {
     try {
-      setIsSubmitting(true);
       const res = await api.post("/bookings", {
         event_id: event.id,
         tier_type: event.pricing[selectedTier].type,
         quantity,
         is_split_payment: isSplitPayment,
         squad_name: isSplitPayment ? splitSquadName : undefined,
+        payment_id: paymentId,
       });
 
       if (res.data?.success) {
         if (isSplitPayment && res.data.data.squad) {
           const newSquadId = res.data.data.squad.id;
           const hostShareAmount = Math.ceil(finalPrice / Math.max(1, quantity));
-          // Initialize Squad PayLock Card in Squad Chat with Host's 1-share contribution
           try {
             await api.post("/paylock/create", {
               squad_id: newSquadId,
@@ -158,7 +147,7 @@ function EventDetail() {
           setCheckoutOpen(false);
           navigate(`/squads/${newSquadId}`);
         } else {
-          toast.success("Booking confirmed! 🎟️");
+          toast.success("Booking confirmed via Razorpay! 🎟️");
           setBookingResult(res.data.data.booking_code);
           setEvent((prev) => ({
             ...prev,
@@ -169,7 +158,99 @@ function EventDetail() {
     } catch (err) {
       console.error("Booking transaction failed:", err);
       toast.error(err.response?.data?.error || "Transaction failed. Try again.");
-    } finally {
+    }
+  };
+
+  const handleCheckoutSubmit = async (e) => {
+    e.preventDefault();
+    if (isSplitPayment && !splitSquadName.trim()) {
+      toast.error("Please enter a Squad Name for the split checkout");
+      return;
+    }
+
+    const hostShareAmount = Math.ceil(finalPrice / Math.max(1, quantity));
+    const targetPayAmount = isSplitPayment ? hostShareAmount : finalPrice;
+
+    try {
+      setIsSubmitting(true);
+
+      // 1. Create Razorpay Order on Backend
+      const orderRes = await api.post("/payment/create-order", {
+        amount: targetPayAmount,
+        receipt: `rcpt_${Date.now()}`,
+        notes: { event_id: event.id, is_split: isSplitPayment }
+      });
+
+      if (!orderRes.data?.success) {
+        throw new Error(orderRes.data?.error || "Could not create Razorpay order");
+      }
+
+      const orderData = orderRes.data.data;
+
+      // 2. Open Razorpay Native Popup Window
+      if (window.Razorpay && orderData) {
+        const options = {
+          key: orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_THbll1AUnRwRMQ",
+          amount: orderData.amount,
+          currency: orderData.currency || "INR",
+          name: "AfterDark Nightlife",
+          description: isSplitPayment ? `PayLock Reserve — ${event.title}` : `Pass Booking — ${event.title}`,
+          order_id: orderData.is_mock ? undefined : orderData.id,
+          prefill: {
+            name: profile?.full_name || "",
+            email: user?.email || "",
+          },
+          theme: { color: "#ff007f" },
+          handler: async function (response) {
+            try {
+              // Verify payment on backend
+              const verifyRes = await api.post("/payment/verify", {
+                razorpay_order_id: response.razorpay_order_id || orderData.id,
+                razorpay_payment_id: response.razorpay_payment_id || `pay_${Date.now()}`,
+                razorpay_signature: response.razorpay_signature,
+                is_mock: orderData.is_mock
+              });
+
+              if (verifyRes.data?.success) {
+                await processBookingConfirmation(verifyRes.data.payment_id || response.razorpay_payment_id);
+              } else {
+                toast.error("Razorpay signature verification failed");
+              }
+            } catch (vErr) {
+              console.error("Verification error:", vErr);
+              toast.error("Payment verification failed");
+            } finally {
+              setIsSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              setIsSubmitting(false);
+              toast("Payment window closed", { icon: "ℹ️" });
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        // Fallback test verification
+        const verifyRes = await api.post("/payment/verify", {
+          razorpay_order_id: orderData?.id || `order_${Date.now()}`,
+          razorpay_payment_id: `pay_test_${Date.now()}`,
+          razorpay_signature: "test_signature",
+          is_mock: true
+        });
+
+        if (verifyRes.data?.success) {
+          await processBookingConfirmation(verifyRes.data.payment_id);
+        }
+        setIsSubmitting(false);
+      }
+
+    } catch (err) {
+      console.error("Checkout submit error:", err);
+      toast.error(err.response?.data?.error || err.message || "Payment initiation failed");
       setIsSubmitting(false);
     }
   };
@@ -684,42 +765,14 @@ function EventDetail() {
                   )}
                 </div>
 
-                <div className="ed-card-fields">
-                  <div className="create-event__field">
-                    <label>Card Number</label>
-                    <input 
-                      type="text" 
-                      placeholder="4111 2222 3333 4444"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      maxLength={19}
-                      required
-                    />
+                <div style={{ background: "rgba(255, 0, 127, 0.04)", border: "1px solid rgba(255, 0, 127, 0.2)", borderRadius: "14px", padding: "16px", marginBottom: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "white", fontWeight: 700, fontSize: "0.9rem" }}>
+                    <span style={{ fontSize: "1.3rem" }}>💳</span>
+                    <span>Razorpay Secure Payment Gateway</span>
                   </div>
-                  <div className="ed-card-row">
-                    <div className="create-event__field">
-                      <label>Expiry Date</label>
-                      <input 
-                        type="text" 
-                        placeholder="MM/YY"
-                        value={expiry}
-                        onChange={(e) => setExpiry(e.target.value)}
-                        maxLength={5}
-                        required
-                      />
-                    </div>
-                    <div className="create-event__field">
-                      <label>CVV</label>
-                      <input 
-                        type="password" 
-                        placeholder="123"
-                        value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
-                        maxLength={3}
-                        required
-                      />
-                    </div>
-                  </div>
+                  <p style={{ margin: "6px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.8rem", textAlign: "left" }}>
+                    Supports <strong>UPI (GPay, PhonePe, Paytm, BHIM)</strong>, Debit/Credit Cards, and NetBanking. Clicking below launches the Razorpay checkout popup window.
+                  </p>
                 </div>
 
                 <button type="submit" className="ed-checkout-submit-btn" disabled={isSubmitting}>
