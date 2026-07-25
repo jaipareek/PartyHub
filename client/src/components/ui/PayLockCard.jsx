@@ -121,7 +121,8 @@ export default function PayLockCard({ paylock, squad, onUpdate }) {
                 onClick={() => handlePay(Math.min(suggestedShare, remainingAmount))}
                 disabled={paying}
               >
-                <HiSparkles /> Pay Equal Share (₹{Math.min(suggestedShare, remainingAmount).toLocaleString("en-IN")})
+                <HiSparkles style={{ flexShrink: 0 }} />
+                <span>Pay Equal Share (₹{Math.min(suggestedShare, remainingAmount).toLocaleString("en-IN")})</span>
               </button>
 
               <button 
@@ -130,7 +131,7 @@ export default function PayLockCard({ paylock, squad, onUpdate }) {
                 onClick={() => setShowCustomInput(true)}
                 disabled={paying}
               >
-                ✏️ Pay Custom Amount
+                <span>✏️ Pay Custom Amount</span>
               </button>
             </>
           ) : (

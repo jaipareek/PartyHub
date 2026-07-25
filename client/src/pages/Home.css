@@ -1498,4 +1498,108 @@
   }
 }
 
+/* 📱 Mobile & Small Device Responsive Styles ── */
+@media (max-width: 768px) {
+  .hero {
+    padding: 100px 16px 60px 16px;
+    min-height: 85vh;
+  }
+  .hero__title {
+    font-size: clamp(2.8rem, 10vw, 4rem);
+    letter-spacing: -1px;
+  }
+  .hero__role {
+    font-size: 1.2rem;
+  }
+  .hero__description {
+    font-size: 0.95rem;
+    margin-bottom: 28px;
+  }
+  .hero__cta {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .hero__btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .glass-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+  }
+  .squad-mini-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .squad-chat-action-btn {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+  }
+  .greeting-title {
+    font-size: 2.2rem;
+  }
+  .nightlife-showcase-section {
+    padding: 60px 16px;
+  }
+  .showcase-title {
+    font-size: 1.9rem;
+  }
+  .showcase-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .matchmaker-widget {
+    padding: 24px 16px;
+    margin: 40px 16px;
+  }
+  .matchmaker-step-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .matchmaker-step-btn {
+    width: 100%;
+  }
+  .spotlight-events-grid,
+  .public-events-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-dashboard {
+    padding: 90px 10px 40px 10px;
+  }
+  .glass-card {
+    padding: 14px 10px;
+  }
+  .hero__title {
+    font-size: 2.4rem;
+  }
+  .greeting-title {
+    font-size: 1.75rem;
+  }
+  .glass-card__title {
+    font-size: 1rem;
+  }
+  .showcase-title {
+    font-size: 1.65rem;
+  }
+  .showcase-subtitle {
+    font-size: 0.9rem;
+  }
+  .radar-items {
+    grid-template-columns: 1fr;
+  }
+}
+
 

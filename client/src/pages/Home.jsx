@@ -736,11 +736,11 @@ function Home() {
 
               {/* 💬 Quick Squad Chat Hub Inbox */}
               <div className="glass-card" style={{ marginTop: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
                   <h3 className="glass-card__title" style={{ margin: 0 }}>
                     <HiUsers style={{ color: "var(--primary-light)", fontSize: "1.2rem" }} /> Squad Chat Inbox 💬
                   </h3>
-                  <span style={{ fontSize: "0.7rem", color: "var(--success)", background: "rgba(0, 255, 170, 0.1)", padding: "2px 8px", borderRadius: "12px", border: "1px solid rgba(0, 255, 170, 0.2)" }}>
+                  <span style={{ fontSize: "0.68rem", color: "var(--success)", background: "rgba(0, 255, 170, 0.1)", padding: "2px 8px", borderRadius: "12px", border: "1px solid rgba(0, 255, 170, 0.2)" }}>
                     🧹 Auto-Cleans 48h
                   </span>
                 </div>
@@ -757,9 +757,9 @@ function Home() {
                 ) : (
                   <div className="squads-mini-list">
                     {mySquads.map((squad) => (
-                      <div key={squad.id} className="squad-mini-card" style={{ padding: "14px 16px", borderRadius: "14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div key={squad.id} className="squad-mini-card">
+                        <div style={{ flex: 1, minWidth: 0, width: "100%" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
                             <h4 style={{ margin: 0, color: "white", fontSize: "0.95rem", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{squad.name}</h4>
                             <span style={{ fontSize: "0.65rem", background: "rgba(125, 92, 252, 0.2)", color: "var(--primary-light)", padding: "2px 6px", borderRadius: "4px" }}>
                               {squad.event?.title ? squad.event.title.slice(0, 15) + "..." : "Party"}
@@ -775,7 +775,7 @@ function Home() {
                         </div>
                         <Link 
                           to={`/squads/${squad.id}`} 
-                          className="pass-mini-card__btn"
+                          className="pass-mini-card__btn squad-chat-action-btn"
                           style={{ textDecoration: "none", padding: "8px 14px", fontSize: "0.8rem", whiteSpace: "nowrap" }}
                         >
                           💬 Chat Now

@@ -9,12 +9,21 @@ const memoryPayLocks = new Map();
 // POST /api/paylock/create — Initialize a PayLock session for a Squad
 export const createPayLockSession = async (req, res) => {
   try {
-    const { squad_id, event_id, venue_id, item_title, total_target_amount, item_type } = req.body;
+    const { squad_id, event_id, venue_id, item_title, total_target_amount, item_type, host_paid_amount } = req.body;
     const userId = req.user.id;
 
     if (!squad_id || !total_target_amount || total_target_amount <= 0) {
       return res.status(400).json({ success: false, error: "Missing required fields: squad_id and total_target_amount" });
     }
+
+    // Fetch user profile for contribution display name
+    const { data: creatorProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const hostName = creatorProfile?.full_name || "Host";
 
     // 1. Fetch Squad and Members Count to calculate suggested share
     const { data: squad } = await supabase
@@ -24,7 +33,18 @@ export const createPayLockSession = async (req, res) => {
       .single();
 
     const membersCount = squad?.members?.length || 1;
+    const initialHostPaid = Number(host_paid_amount || 0);
     const suggestedShare = Math.ceil(total_target_amount / membersCount);
+
+    const initialContributions = initialHostPaid > 0 ? [{
+      user_id: userId,
+      full_name: `${hostName} (Host)`,
+      amount: initialHostPaid,
+      paid_at: new Date().toISOString()
+    }] : [];
+
+    const targetVal = Number(total_target_amount);
+    const remainingVal = Math.max(0, targetVal - initialHostPaid);
 
     // 2. Insert PayLock Session Payload
     const expiresAt = new Date();
@@ -39,13 +59,13 @@ export const createPayLockSession = async (req, res) => {
       venue_id: venue_id || null,
       item_title: item_title || "Squad Pass / VIP Table",
       item_type: item_type || "ticket",
-      total_target_amount: Number(total_target_amount),
-      collected_amount: 0,
-      remaining_amount: Number(total_target_amount),
+      total_target_amount: targetVal,
+      collected_amount: initialHostPaid,
+      remaining_amount: remainingVal,
       suggested_share: suggestedShare,
-      status: "active", // 'active' | 'completed' | 'expired'
+      status: remainingVal === 0 ? "completed" : "active", // 'active' | 'completed' | 'expired'
       expires_at: expiresAt.toISOString(),
-      contributions: []
+      contributions: initialContributions
     };
 
     // Store in memory cache

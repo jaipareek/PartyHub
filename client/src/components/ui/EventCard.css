@@ -356,4 +356,36 @@
   .event-card__image-wrapper {
     height: 160px;
   }
+  .event-card__type-badge {
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    font-size: 0.62rem;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .event-card__student-badge {
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    font-size: 0.6rem;
+    max-width: 48%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .event-card__date-pill {
+    bottom: 8px;
+    right: 8px;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+  }
+  .event-card__info {
+    padding: 14px;
+  }
+  .event-card__title {
+    font-size: 1.05rem;
+  }
 }

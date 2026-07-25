@@ -139,13 +139,15 @@ function EventDetail() {
       if (res.data?.success) {
         if (isSplitPayment && res.data.data.squad) {
           const newSquadId = res.data.data.squad.id;
-          // Initialize Squad PayLock Card in Squad Chat
+          const hostShareAmount = Math.ceil(finalPrice / Math.max(1, quantity));
+          // Initialize Squad PayLock Card in Squad Chat with Host's 1-share contribution
           try {
             await api.post("/paylock/create", {
               squad_id: newSquadId,
               event_id: event.id,
               item_title: `Pass: ${event.title}`,
               total_target_amount: finalPrice,
+              host_paid_amount: hostShareAmount,
               item_type: "ticket"
             });
           } catch (pErr) {
@@ -675,8 +677,8 @@ function EventDetail() {
                         required={isSplitPayment}
                         style={{ marginTop: "4px" }}
                       />
-                      <p style={{ color: "hsl(var(--muted))", fontSize: "0.72rem", margin: "6px 0 0 0" }}>
-                        Each member pays ₹{(finalPrice / quantity).toFixed(2)} when joining your crew.
+                      <p style={{ color: "var(--primary-light)", fontSize: "0.75rem", margin: "8px 0 0 0", fontWeight: 700 }}>
+                        ⚡ PayLock Escrow: You pay only your equal share (₹{Math.ceil(finalPrice / Math.max(1, quantity))}) now. Remaining ₹{finalPrice - Math.ceil(finalPrice / Math.max(1, quantity))} is split with squad members in Squad Chat.
                       </p>
                     </div>
                   )}
@@ -721,7 +723,11 @@ function EventDetail() {
                 </div>
 
                 <button type="submit" className="ed-checkout-submit-btn" disabled={isSubmitting}>
-                  {isSubmitting ? "Processing Payment..." : `Pay ₹${finalPrice}`}
+                  {isSubmitting 
+                    ? "Processing Payment..." 
+                    : isSplitPayment 
+                    ? `Reserve PayLock — Pay My Share (₹${Math.ceil(finalPrice / Math.max(1, quantity))})` 
+                    : `Pay ₹${finalPrice}`}
                 </button>
               </form>
             ) : (

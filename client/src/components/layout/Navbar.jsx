@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { HiArrowRightOnRectangle, HiBell, HiTrash, HiChatBubbleLeftRight } from "react-icons/hi2";
+import { HiArrowRightOnRectangle, HiBell, HiTrash, HiChatBubbleLeftRight, HiBars3, HiXMark } from "react-icons/hi2";
 import SquadChatDrawer from "../ui/SquadChatDrawer";
 import api from "../../lib/api";
 import toast from "react-hot-toast";
@@ -15,6 +15,7 @@ const NAV_LINKS = [
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated, signOut, profile } = useAuth();
@@ -137,7 +138,7 @@ function Navbar() {
         {isAuthenticated ? (
           <div className="pill-navbar__user">
             {/* Squad Chat Inbox Trigger */}
-            <div className="pill-navbar__notif-wrapper">
+            <div className="pill-navbar__notif-wrapper hide-mobile">
               <button
                 type="button"
                 className="pill-navbar__notif-btn"
@@ -149,7 +150,7 @@ function Navbar() {
             </div>
 
             {/* Bell Icon & Notification Trigger */}
-            <div className="pill-navbar__notif-wrapper">
+            <div className="pill-navbar__notif-wrapper hide-mobile">
               <button
                 type="button"
                 className="pill-navbar__notif-btn"
@@ -185,7 +186,7 @@ function Navbar() {
               </Link>
             )}
             <button
-              className="pill-navbar__signout"
+              className="pill-navbar__signout hide-mobile"
               onClick={handleSignOut}
               aria-label="Sign out"
               title="Sign out"
@@ -201,7 +202,93 @@ function Navbar() {
             </span>
           </Link>
         )}
+
+        {/* 📱 Mobile Hamburger Menu Trigger */}
+        <button
+          type="button"
+          className="pill-navbar__mobile-toggle"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle Navigation Menu"
+        >
+          {mobileMenuOpen ? <HiXMark /> : <HiBars3 />}
+        </button>
       </div>
+
+      {/* 📱 Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="pill-navbar__mobile-drawer">
+          <div className="pill-navbar__mobile-links">
+            {activeLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={`pill-navbar__mobile-link ${
+                  location.pathname === link.path ? "active" : ""
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {isAuthenticated && (
+              <>
+                <button
+                  type="button"
+                  className="pill-navbar__mobile-link"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowSquadChatDrawer(true);
+                  }}
+                >
+                  💬 Squad Chats Hub
+                </button>
+
+                <button
+                  type="button"
+                  className="pill-navbar__mobile-link"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowNotifDrawer(true);
+                  }}
+                >
+                  🔔 Notifications {notifications.some(n => !n.is_read) && `(${notifications.filter(n => !n.is_read).length})`}
+                </button>
+
+                <Link
+                  to={profile?.role === "admin" ? "/admin/dashboard" : profile?.role === "venue_owner" ? "/owner/dashboard" : "/profile"}
+                  className="pill-navbar__mobile-link"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  👤 My Profile & Account
+                </Link>
+
+                <button
+                  type="button"
+                  className="pill-navbar__mobile-link"
+                  style={{ color: "#ef4444" }}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleSignOut();
+                  }}
+                >
+                  🚪 Sign Out
+                </button>
+              </>
+            )}
+
+            {!isAuthenticated && (
+              <Link
+                to="/login"
+                className="pill-navbar__mobile-link pill-navbar__mobile-link--cta"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In / Join AfterDark ↗
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Notifications Drawer */}
       {showNotifDrawer && isAuthenticated && (
