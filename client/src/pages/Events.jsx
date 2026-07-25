@@ -23,11 +23,13 @@ const CATEGORIES = [
 
 const SORT_OPTIONS = [
   { value: "date_asc", label: "Date: Soonest (Upcoming)" },
-  { value: "date_desc", label: "Date: Latest / Newest First" },
-  { value: "newly_added", label: "Newly Added First" },
+  { value: "today", label: "📅 Today's Parties" },
+  { value: "this_weekend", label: "⚡ This Weekend" },
+  { value: "this_week", label: "🗓️ This Week" },
   { value: "price_asc", label: "Price: Low → High" },
   { value: "price_desc", label: "Price: High → Low" },
   { value: "popularity", label: "Popularity (Most Booked)" },
+  { value: "newly_added", label: "Newly Added First" },
 ];
 
 function Events() {
@@ -181,38 +183,61 @@ function Events() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.4 }}
       >
-        {/* Category Chips */}
-        <div className="events-filters__chips">
-          {CATEGORIES.map((cat) => (
+        {/* Quick Time Filter Pills */}
+        <div className="events-filters__time-pills">
+          {[
+            { value: "date_asc", label: "✨ All Upcoming" },
+            { value: "today", label: "📅 Today" },
+            { value: "this_weekend", label: "⚡ This Weekend" },
+            { value: "this_week", label: "🗓️ This Week" },
+          ].map((tp) => (
             <button
-              key={cat.value}
-              className={`events-filters__chip ${
-                activeCategory === cat.value
-                  ? "events-filters__chip--active"
-                  : ""
-              }`}
-              onClick={() => handleCategoryChange(cat.value)}
+              key={tp.value}
+              className={`events-time-pill ${sortBy === tp.value ? "events-time-pill--active" : ""}`}
+              onClick={() => {
+                setSortBy(tp.value);
+                fetchEvents(searchQuery, activeCategory, tp.value);
+              }}
             >
-              {cat.label}
+              {tp.label}
             </button>
           ))}
         </div>
 
-        {/* Sort Dropdown */}
-        <div className="events-filters__sort">
-          <span className="events-filters__sort-label">Sort</span>
-          <select
-            className="events-filters__sort-select"
-            value={sortBy}
-            onChange={handleSortChange}
-            id="events-sort-select"
-          >
-            {SORT_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+        {/* Row 2: Category Chips & Sort Dropdown */}
+        <div className="events-filters__row">
+          <div className="events-filters__chips">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                className={`events-filters__chip ${
+                  activeCategory === cat.value
+                    ? "events-filters__chip--active"
+                    : ""
+                }`}
+                onClick={() => handleCategoryChange(cat.value)}
+              >
+                {cat.label}
+              </button>
             ))}
-          </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="events-filters__sort">
+            <span className="events-filters__sort-label">Sort</span>
+            <select
+              className="events-filters__sort-select"
+              value={sortBy}
+              onChange={handleSortChange}
+              id="events-sort-select"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </motion.div>
 

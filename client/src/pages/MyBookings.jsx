@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { HiMapPin, HiCalendar, HiClock, HiTicket, HiCheckCircle, HiMiniInformationCircle, HiSparkles } from "react-icons/hi2";
+import { HiMapPin, HiCalendar, HiClock, HiTicket, HiCheckCircle, HiMiniInformationCircle, HiSparkles, HiBell } from "react-icons/hi2";
 import api from "../lib/api";
 import toast from "react-hot-toast";
 import "./MyBookings.css";
@@ -158,10 +158,42 @@ function MyBookings() {
                           </div>
                         </div>
 
-                        <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
                           <span className="ticket-stub__tier">
                             {booking.tier_type} · {booking.quantity} Pass{booking.quantity > 1 ? "es" : ""}
                           </span>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await api.post("/notifications/remind", {
+                                  event_id: event.id,
+                                  event_title: event.title,
+                                  reminder_hours: 2
+                                });
+                                if (res.data?.success) {
+                                  toast.success(res.data.message || "Reminder set for 2 hours before start! 🔔");
+                                }
+                              } catch (rErr) {
+                                toast.error("Could not set reminder");
+                              }
+                            }}
+                            style={{
+                              background: "rgba(255, 0, 127, 0.12)",
+                              color: "#ff007f",
+                              border: "1px solid rgba(255, 0, 127, 0.3)",
+                              borderRadius: "16px",
+                              padding: "4px 12px",
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                            title="Remind me 2h before party starts"
+                          >
+                            <HiBell /> Remind Me
+                          </button>
                         </div>
                       </div>
                     </div>

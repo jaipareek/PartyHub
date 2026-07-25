@@ -5,7 +5,8 @@ import { Router } from "express";
 import { 
   getMyNotifications, 
   markAllRead, 
-  deleteNotification 
+  deleteNotification,
+  createEventReminder
 } from "../controllers/notificationController.js";
 import { protect } from "../middleware/auth.js";
 
@@ -15,6 +16,7 @@ const router = Router();
 router.use(protect);
 
 router.get("/", getMyNotifications);
+router.post("/remind", createEventReminder);
 router.put("/mark-read", markAllRead);
 router.delete("/:id", deleteNotification);
 

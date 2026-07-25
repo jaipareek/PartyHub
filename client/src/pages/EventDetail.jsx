@@ -13,7 +13,8 @@ import {
   HiUsers,
   HiUserPlus,
   HiHeart,
-  HiSparkles
+  HiSparkles,
+  HiBell
 } from "react-icons/hi2";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
@@ -28,9 +29,11 @@ function EventDetail() {
 
   const [event, setEvent] = useState(null);
   const [relatedEvents, setRelatedEvents] = useState([]);
-  const [selectedTier, setSelectedTier] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedTier, setSelectedTier] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
 
   // Booking states
   const [quantity, setQuantity] = useState(1);
@@ -75,6 +78,28 @@ function EventDetail() {
       console.error("Failed to load squads:", err);
     } finally {
       setFetchingSquads(false);
+    }
+  };
+
+  const handleSetReminder = async (hours) => {
+    if (!user) {
+      toast.error("Please sign in to set event reminders!");
+      navigate(`/login?redirect=/events/${id}`);
+      return;
+    }
+    try {
+      const res = await api.post("/notifications/remind", {
+        event_id: event.id,
+        event_title: event.title,
+        reminder_hours: hours
+      });
+      if (res.data?.success) {
+        toast.success(res.data.message || `Reminder set for ${hours} hour(s) before event! 🔔`);
+        setShowReminderModal(false);
+      }
+    } catch (err) {
+      console.error("Set reminder error:", err);
+      toast.error(err.response?.data?.error || "Failed to set event reminder");
     }
   };
 
@@ -450,9 +475,19 @@ function EventDetail() {
 
               <div className="ed-title-row">
                 <h1 className="ed-title">{event.title}</h1>
-                <button className="ed-share-btn" onClick={handleShare} title="Share Link">
-                  <HiShare />
-                </button>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button 
+                    className="ed-share-btn" 
+                    onClick={() => setShowReminderModal(true)} 
+                    title="Set Start Reminder 🔔"
+                    style={{ background: "rgba(255, 0, 127, 0.15)", color: "#ff007f", border: "1px solid rgba(255, 0, 127, 0.3)" }}
+                  >
+                    <HiBell />
+                  </button>
+                  <button className="ed-share-btn" onClick={handleShare} title="Share Link">
+                    <HiShare />
+                  </button>
+                </div>
               </div>
 
               {/* Badges */}
@@ -808,6 +843,55 @@ function EventDetail() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Event Reminder overlay portal */}
+      {showReminderModal && (
+        <div className="ed-modal-overlay" onClick={() => setShowReminderModal(false)}>
+          <div className="ed-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "420px" }}>
+            <div className="ed-modal-header">
+              <h2>🔔 Set Event Reminder</h2>
+              <button className="ed-modal-close" onClick={() => setShowReminderModal(false)}>&times;</button>
+            </div>
+            <div style={{ padding: "20px 0", textAlign: "center" }}>
+              <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem", marginBottom: "20px" }}>
+                Choose when you want an alert before <strong>{event.title}</strong> begins:
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <button
+                  onClick={() => handleSetReminder(1)}
+                  style={{
+                    background: "linear-gradient(135deg, var(--primary), var(--secondary))",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "12px",
+                    padding: "14px 18px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  ⏰ 1 Hour Before Event Starts
+                </button>
+                <button
+                  onClick={() => handleSetReminder(2)}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.06)",
+                    color: "white",
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    padding: "14px 18px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    fontSize: "0.95rem"
+                  }}
+                >
+                  ⏰ 2 Hours Before Event Starts
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

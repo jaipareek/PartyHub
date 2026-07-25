@@ -7,14 +7,11 @@
 
 import supabase from "../config/supabase.js";
 
-// GET /api/events — Get all active events
+// GET /api/events — Get all active upcoming events
 export const getEvents = async (req, res) => {
   try {
-    // 🧠 LEARN: Supabase query builder
-    // .from("events") = SELECT FROM events
-    // .select("*") = SELECT all columns
-    // .eq("is_active", true) = WHERE is_active = true
-    // .order("date") = ORDER BY date ascending
+    const todayStr = new Date().toISOString().split("T")[0];
+
     const { data, error } = await supabase
       .from("events")
       .select(`
@@ -25,6 +22,7 @@ export const getEvents = async (req, res) => {
       `)
       .eq("is_active", true)
       .eq("venues.is_verified", true)
+      .gte("date", todayStr)
       .order("date", { ascending: true });
 
     if (error) throw error;
@@ -171,7 +169,9 @@ export const getEventById = async (req, res) => {
 // GET /api/events/search?q=keyword&category=club_night&city=mumbai&sort=date
 export const searchEvents = async (req, res) => {
   try {
-    const { q, category, city, sort } = req.query;
+    const { q, category, city, sort, time_filter } = req.query;
+    const todayObj = new Date();
+    const todayStr = todayObj.toISOString().split("T")[0];
 
     let query = supabase
       .from("events")
@@ -180,12 +180,12 @@ export const searchEvents = async (req, res) => {
         venues!inner (id, name, city, images, category, is_verified)
       `)
       .eq("is_active", true)
-      .eq("venues.is_verified", true);
+      .eq("venues.is_verified", true)
+      .gte("date", todayStr); // Automatically filter out past expired events!
 
-    // 🧠 LEARN: Chaining filters conditionally
-    // We only add a filter if the query parameter exists
+    // Filters
     if (q) {
-      query = query.ilike("title", `%${q}%`); // Case-insensitive LIKE search
+      query = query.ilike("title", `%${q}%`);
     }
     if (category) {
       query = query.eq("event_type", category);
@@ -194,29 +194,52 @@ export const searchEvents = async (req, res) => {
       query = query.eq("venues.city", city);
     }
 
-    // 🧠 LEARN: Dynamic sorting
-    // The sort parameter controls how results are ordered
-    switch (sort) {
-      case "popularity":
-        query = query.order("booked_count", { ascending: false });
-        break;
-      case "date_desc":
-      case "latest":
-        query = query.order("date", { ascending: false }).order("start_time", { ascending: false });
-        break;
-      case "newly_added":
-        query = query.order("created_at", { ascending: false });
-        break;
-      case "date_asc":
-      case "date":
-      default:
-        query = query.order("date", { ascending: true }).order("start_time", { ascending: true });
-        break;
+    // Time Filters (Today / This Week / This Weekend)
+    if (sort === "today" || time_filter === "today") {
+      query = query.eq("date", todayStr);
+    } else if (sort === "this_week" || time_filter === "this_week") {
+      const nextWeekObj = new Date(todayObj);
+      nextWeekObj.setDate(todayObj.getDate() + 7);
+      const nextWeekStr = nextWeekObj.toISOString().split("T")[0];
+      query = query.lte("date", nextWeekStr);
+    } else if (sort === "this_weekend" || time_filter === "this_weekend") {
+      const dayOfWeek = todayObj.getDay();
+      const daysUntilSat = (6 - dayOfWeek) % 7;
+      const saturdayObj = new Date(todayObj);
+      saturdayObj.setDate(todayObj.getDate() + daysUntilSat);
+      const sundayObj = new Date(saturdayObj);
+      sundayObj.setDate(saturdayObj.getDate() + 1);
+      
+      const satStr = saturdayObj.toISOString().split("T")[0];
+      const sunStr = sundayObj.toISOString().split("T")[0];
+      query = query.in("date", [satStr, sunStr]);
     }
 
-    const { data, error } = await query;
+    // Default DB ordering
+    if (sort === "popularity") {
+      query = query.order("booked_count", { ascending: false });
+    } else if (sort === "newly_added") {
+      query = query.order("created_at", { ascending: false });
+    } else if (sort === "date_desc") {
+      query = query.order("date", { ascending: false });
+    } else {
+      query = query.order("date", { ascending: true }).order("start_time", { ascending: true });
+    }
 
+    let { data, error } = await query;
     if (error) throw error;
+
+    // JavaScript post-processing for Price sorting (Price Low -> High & High -> Low)
+    const getMinPrice = (item) => {
+      if (!item.pricing || !Array.isArray(item.pricing) || item.pricing.length === 0) return 0;
+      return Math.min(...item.pricing.map(p => Number(p.price) || 0));
+    };
+
+    if (sort === "price_asc") {
+      data.sort((a, b) => getMinPrice(a) - getMinPrice(b));
+    } else if (sort === "price_desc") {
+      data.sort((a, b) => getMinPrice(b) - getMinPrice(a));
+    }
 
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
