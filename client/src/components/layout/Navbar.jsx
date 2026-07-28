@@ -26,20 +26,31 @@ function Navbar() {
   const [showSquadChatDrawer, setShowSquadChatDrawer] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) {
+      setNotifications([]);
+      return;
+    }
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const fetchNotifications = async () => {
+    if (!isAuthenticated || !user) {
+      setNotifications([]);
+      return;
+    }
     try {
       const res = await api.get("/notifications");
       if (res.data?.success) {
         setNotifications(res.data.data);
       }
     } catch (err) {
-      console.error("Failed to load notifications:", err);
+      if (err.response?.status === 401) {
+        setNotifications([]);
+      } else {
+        console.error("Failed to load notifications:", err);
+      }
     }
   };
 

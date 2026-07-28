@@ -33,13 +33,28 @@ api.interceptors.request.use(
 );
 
 // This runs AFTER every response is received
-// If we get a 401 (unauthorized), we redirect to login
+// If we get a 401 (unauthorized), remove token safely without forcing an infinite reload loop
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("access_token");
-      window.location.href = "/login";
+      
+      const currentPath = window.location.pathname;
+      const isPublicOrAuthPage = [
+        "/login", 
+        "/signup", 
+        "/owner/login", 
+        "/owner/signup", 
+        "/", 
+        "/events", 
+        "/venues"
+      ].includes(currentPath) || currentPath.startsWith("/events/") || currentPath.startsWith("/venues/");
+
+      // Only redirect to login if user is currently on a protected route (e.g. /my-bookings, /squads)
+      if (!isPublicOrAuthPage) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
