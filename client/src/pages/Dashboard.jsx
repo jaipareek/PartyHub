@@ -39,6 +39,7 @@ function Dashboard() {
   // Table reservation states
   const [reservations, setReservations] = useState([]);
   const [fetchingReservations, setFetchingReservations] = useState(false);
+  const [reservationFilter, setReservationFilter] = useState("active");
 
   useEffect(() => {
     if (activeTab === "events" && user) {
@@ -338,21 +339,80 @@ function Dashboard() {
         )}
 
         {/* TAB 4: TABLE RESERVATIONS */}
-        {activeTab === "tables" && (
-          <div>
-            <h2 style={{ fontSize: "1.5rem", color: "white", marginBottom: "6px", textAlign: "left" }}>Table Bookings</h2>
-            <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem", marginBottom: "28px", textAlign: "left" }}>Manage guest dinner and lunch table reservations for your venue.</p>
+        {activeTab === "tables" && (() => {
+          const todayStr = new Date().toISOString().split("T")[0];
 
-            {fetchingReservations ? (
-              <p style={{ color: "white" }}>Loading reservations...</p>
-            ) : reservations.length === 0 ? (
-              <div className="dashboard-placeholder">
-                <h2>No Table Bookings Found</h2>
-                <p>Guests haven't requested any table bookings for your venue yet.</p>
+          const activeReservations = reservations.filter((r) => {
+            const isCancelledOrDeclined = r.status === "cancelled" || r.status === "declined";
+            const isPast = r.reservation_date < todayStr;
+            return !isCancelledOrDeclined && !isPast;
+          });
+
+          const historyReservations = reservations.filter((r) => {
+            const isCancelledOrDeclined = r.status === "cancelled" || r.status === "declined";
+            const isPast = r.reservation_date < todayStr;
+            return isCancelledOrDeclined || isPast;
+          });
+
+          const displayedReservations = reservationFilter === "active" ? activeReservations : historyReservations;
+
+          return (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
+                <div>
+                  <h2 style={{ fontSize: "1.5rem", color: "white", marginBottom: "6px", textAlign: "left" }}>Table Bookings</h2>
+                  <p style={{ color: "hsl(var(--muted))", fontSize: "0.88rem", margin: 0, textAlign: "left" }}>Manage guest dinner and lunch table reservations for your venue.</p>
+                </div>
+
+                {/* Filter Toggle Pills */}
+                <div style={{ display: "flex", gap: "8px", background: "rgba(255, 255, 255, 0.04)", padding: "4px", borderRadius: "20px", border: "1px solid var(--border)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setReservationFilter("active")}
+                    style={{
+                      background: reservationFilter === "active" ? "linear-gradient(135deg, var(--primary), var(--secondary))" : "transparent",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "16px",
+                      padding: "6px 16px",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    🟢 Active & Upcoming ({activeReservations.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReservationFilter("history")}
+                    style={{
+                      background: reservationFilter === "history" ? "rgba(255, 255, 255, 0.12)" : "transparent",
+                      color: reservationFilter === "history" ? "white" : "hsl(var(--muted))",
+                      border: "none",
+                      borderRadius: "16px",
+                      padding: "6px 16px",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    📁 History & Cancelled ({historyReservations.length})
+                  </button>
+                </div>
               </div>
-            ) : (
-              <div className="owner-tables-grid">
-                {reservations.map((reserve) => {
+
+              {fetchingReservations ? (
+                <p style={{ color: "white" }}>Loading reservations...</p>
+              ) : displayedReservations.length === 0 ? (
+                <div className="dashboard-placeholder">
+                  <h2>{reservationFilter === "active" ? "No Active Table Bookings" : "No Past / Cancelled History"}</h2>
+                  <p>{reservationFilter === "active" ? "New active table requests will appear here." : "Cancelled or expired past table reservations will be archived here."}</p>
+                </div>
+              ) : (
+                <div className="owner-tables-grid">
+                  {displayedReservations.map((reserve) => {
                   const guestName = reserve.guest?.full_name || "Anonymous";
                   const initials = guestName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?";
                   
@@ -498,7 +558,8 @@ function Dashboard() {
               </div>
             )}
           </div>
-        )}
+          );
+        })()}
 
         {/* TAB 5: ANALYTICS */}
         {activeTab === "analytics" && <AnalyticsHub venueId={venueId} />}

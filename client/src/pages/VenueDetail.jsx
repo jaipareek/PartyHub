@@ -119,8 +119,9 @@ function VenueDetail() {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   // Table Reservation states
+  const todayIsoStr = new Date().toISOString().split("T")[0];
   const [reserveModalOpen, setReserveModalOpen] = useState(false);
-  const [reserveDate, setReserveDate] = useState("");
+  const [reserveDate, setReserveDate] = useState(todayIsoStr);
   const [reserveTime, setReserveTime] = useState("20:00");
   const [reserveGuests, setReserveGuests] = useState(2);
   const [reserveArea, setReserveArea] = useState("main_lounge");
@@ -836,12 +837,51 @@ function VenueDetail() {
                 <div className="ed-card-row">
                   <div className="create-event__field">
                     <label className="vd-form-lbl">Reservation Date</label>
+
+                    {/* Quick Date Shortcuts */}
+                    <div style={{ display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" }}>
+                      {[
+                        { label: "Today", date: todayIsoStr },
+                        { label: "Tomorrow", date: (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; })() },
+                        { label: "This Saturday", date: (() => { const d = new Date(); const dow = d.getDay(); const diff = (6 - dow + 7) % 7 || 7; d.setDate(d.getDate() + diff); return d.toISOString().split("T")[0]; })() }
+                      ].map((chip) => (
+                        <button
+                          key={chip.label}
+                          type="button"
+                          onClick={() => setReserveDate(chip.date)}
+                          style={{
+                            background: reserveDate === chip.date ? "linear-gradient(135deg, var(--primary), var(--secondary))" : "rgba(255,255,255,0.06)",
+                            color: "white",
+                            border: reserveDate === chip.date ? "1px solid var(--primary-light)" : "1px solid var(--border)",
+                            borderRadius: "14px",
+                            padding: "4px 10px",
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          {chip.label}
+                        </button>
+                      ))}
+                    </div>
+
                     <input 
                       type="date" 
                       value={reserveDate}
                       onChange={(e) => setReserveDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
+                      min={todayIsoStr}
                       required
+                      style={{ 
+                        colorScheme: "dark", 
+                        color: "#ffffff", 
+                        background: "#1a1a24", 
+                        border: "1px solid var(--border)", 
+                        borderRadius: "8px", 
+                        padding: "10px 14px", 
+                        width: "100%",
+                        fontSize: "0.9rem"
+                      }}
                     />
                   </div>
                   <div className="create-event__field">
@@ -851,6 +891,17 @@ function VenueDetail() {
                       value={reserveTime}
                       onChange={(e) => setReserveTime(e.target.value)}
                       required
+                      style={{ 
+                        colorScheme: "dark", 
+                        color: "#ffffff", 
+                        background: "#1a1a24", 
+                        border: "1px solid var(--border)", 
+                        borderRadius: "8px", 
+                        padding: "10px 14px", 
+                        width: "100%",
+                        fontSize: "0.9rem",
+                        marginTop: "27px"
+                      }}
                     />
                   </div>
                 </div>

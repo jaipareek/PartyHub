@@ -11,6 +11,7 @@ function MyBookings() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("passes");
+  const [activeTabSubFilter, setActiveTabSubFilter] = useState("active");
   const [bookings, setBookings] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -218,84 +219,169 @@ function MyBookings() {
         )}
 
         {/* ── TAB 2: TABLE RESERVATIONS ── */}
-        {activeTab === "tables" && (
-          reservations.length === 0 ? (
-            <div className="ticket-stub__empty">
-              <h3>No table reservations</h3>
-              <p>You haven't requested any table reservations yet. Book a table at your favorite lounge!</p>
-              <Link to="/venues" className="ed-pricing__book-btn" style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", width: "auto", padding: "12px 30px", marginTop: "20px" }}>
-                Browse Venues
-              </Link>
-            </div>
-          ) : (
-            <div className="tickets-list">
-              {reservations.map((reserve) => {
-                const venue = reserve.venue || {};
-                
-                return (
-                  <div key={reserve.id} className="ticket-stub table-reservation-stub">
-                    <div className="ticket-stub__info" style={{ padding: "24px" }}>
-                      <div className="ticket-stub__details" style={{ width: "100%" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "12px" }}>
-                          <div>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#f59e0b", letterSpacing: "1px" }}>
-                              Table Reservation ({reserve.occasion})
-                            </span>
-                            <h2 className="ticket-stub__title" style={{ marginTop: "4px", fontSize: "1.45rem" }}>{venue.name}</h2>
-                          </div>
-                          {getStatusBadge(reserve.status)}
-                        </div>
+        {activeTab === "tables" && (() => {
+          const todayStr = new Date().toISOString().split("T")[0];
 
-                        <div className="ticket-stub__meta-group" style={{ margin: "20px 0" }}>
-                          <div className="ticket-stub__meta-item">
-                            <HiCalendar />
-                            <span>{formatDate(reserve.reservation_date)}</span>
-                          </div>
-                          <div className="ticket-stub__meta-item">
-                            <HiClock />
-                            <span>{formatTime(reserve.reservation_time)}</span>
-                          </div>
-                          <div className="ticket-stub__meta-item">
-                            <HiMapPin />
-                            <span>{venue.city}</span>
-                          </div>
-                        </div>
+          const activeTableRes = reservations.filter((r) => {
+            const isCancelled = r.status === "cancelled" || r.status === "declined";
+            const isPast = r.reservation_date < todayStr;
+            return !isCancelled && !isPast;
+          });
 
-                        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", padding: "12px 16px", background: "#1a1a24", borderRadius: "8px", border: "1px solid var(--border)" }}>
-                          <div style={{ fontSize: "0.82rem" }}>
-                            <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Guests</span>
-                            <strong>{reserve.guest_count} Guest{reserve.guest_count > 1 ? "s" : ""}</strong>
-                          </div>
-                          <div style={{ fontSize: "0.82rem" }}>
-                            <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Preferred Area</span>
-                            <strong style={{ textTransform: "capitalize" }}>{reserve.seating_area?.replace("_", " ")}</strong>
-                          </div>
-                          {reserve.table_code && (
-                            <div style={{ fontSize: "0.82rem" }}>
-                              <span style={{ color: "#f59e0b", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Table Code</span>
-                              <strong style={{ color: "#f59e0b" }}>{reserve.table_code}</strong>
+          const historyTableRes = reservations.filter((r) => {
+            const isCancelled = r.status === "cancelled" || r.status === "declined";
+            const isPast = r.reservation_date < todayStr;
+            return isCancelled || isPast;
+          });
+
+          const displayedTableRes = activeTabSubFilter === "active" ? activeTableRes : historyTableRes;
+
+          return (
+            <div>
+              <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "24px" }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabSubFilter("active")}
+                  style={{
+                    background: activeTabSubFilter === "active" ? "linear-gradient(135deg, var(--primary), var(--secondary))" : "rgba(255, 255, 255, 0.04)",
+                    color: "white",
+                    border: activeTabSubFilter === "active" ? "1px solid var(--primary-light)" : "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "6px 18px",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  🟢 Active Table Bookings ({activeTableRes.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabSubFilter("history")}
+                  style={{
+                    background: activeTabSubFilter === "history" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.04)",
+                    color: activeTabSubFilter === "history" ? "white" : "hsl(var(--muted))",
+                    border: "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "6px 18px",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  📁 History & Cancelled ({historyTableRes.length})
+                </button>
+              </div>
+
+              {displayedTableRes.length === 0 ? (
+                <div className="ticket-stub__empty">
+                  <h3>{activeTabSubFilter === "active" ? "No active table reservations" : "No past or cancelled history"}</h3>
+                  <p>{activeTabSubFilter === "active" ? "You haven't requested any active table reservations yet." : "Cancelled or past table reservations will appear here."}</p>
+                  <Link to="/venues" className="ed-pricing__book-btn" style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", width: "auto", padding: "12px 30px", marginTop: "20px" }}>
+                    Browse Venues
+                  </Link>
+                </div>
+              ) : (
+                <div className="tickets-list">
+                  {displayedTableRes.map((reserve) => {
+                    const venue = reserve.venue || {};
+                    
+                    return (
+                      <div key={reserve.id} className="ticket-stub table-reservation-stub">
+                        <div className="ticket-stub__info" style={{ padding: "24px" }}>
+                          <div className="ticket-stub__details" style={{ width: "100%" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%", flexWrap: "wrap", gap: "12px" }}>
+                              <div>
+                                <span style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "#f59e0b", letterSpacing: "1px" }}>
+                                  Table Reservation ({reserve.occasion})
+                                </span>
+                                <h2 className="ticket-stub__title" style={{ marginTop: "4px", fontSize: "1.45rem" }}>{venue.name}</h2>
+                              </div>
+                              {getStatusBadge(reserve.status)}
                             </div>
-                          )}
-                        </div>
 
-                        {reserve.special_requests && (
-                          <div style={{ marginTop: "14px", fontSize: "0.82rem", color: "rgba(255, 255, 255, 0.75)" }}>
-                            <span style={{ color: "hsl(var(--muted))", fontWeight: 600, display: "block" }}>Requests:</span>
-                            <p style={{ margin: "4px 0 0 0", fontStyle: "italic" }}>"{reserve.special_requests}"</p>
+                            <div className="ticket-stub__meta-group" style={{ margin: "20px 0" }}>
+                              <div className="ticket-stub__meta-item">
+                                <HiCalendar />
+                                <span>{formatDate(reserve.reservation_date)}</span>
+                              </div>
+                              <div className="ticket-stub__meta-item">
+                                <HiClock />
+                                <span>{formatTime(reserve.reservation_time)}</span>
+                              </div>
+                              <div className="ticket-stub__meta-item">
+                                <HiMapPin />
+                                <span>{venue.city}</span>
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", padding: "12px 16px", background: "#1a1a24", borderRadius: "8px", border: "1px solid var(--border)" }}>
+                              <div style={{ fontSize: "0.82rem" }}>
+                                <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Guests</span>
+                                <strong>{reserve.guest_count} Guest{reserve.guest_count > 1 ? "s" : ""}</strong>
+                              </div>
+                              <div style={{ fontSize: "0.82rem" }}>
+                                <span style={{ color: "hsl(var(--muted))", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Preferred Area</span>
+                                <strong style={{ textTransform: "capitalize" }}>{reserve.seating_area?.replace("_", " ")}</strong>
+                              </div>
+                              {reserve.table_code && (
+                                <div style={{ fontSize: "0.82rem" }}>
+                                  <span style={{ color: "#f59e0b", display: "block", fontSize: "0.72rem", textTransform: "uppercase", fontWeight: 600 }}>Table Code</span>
+                                  <strong style={{ color: "#f59e0b" }}>{reserve.table_code}</strong>
+                                </div>
+                              )}
+                            </div>
+
+                            {reserve.special_requests && (
+                              <div style={{ marginTop: "14px", fontSize: "0.82rem", color: "rgba(255, 255, 255, 0.75)" }}>
+                                <span style={{ color: "hsl(var(--muted))", fontWeight: 600, display: "block" }}>Requests:</span>
+                                <p style={{ margin: "4px 0 0 0", fontStyle: "italic" }}>"{reserve.special_requests}"</p>
+                              </div>
+                            )}
+
+                            <div style={{ marginTop: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", fontSize: "0.75rem", color: "hsl(var(--muted))" }}>
+                              <span>Address: <strong>{venue.address}</strong></span>
+
+                              {reserve.status !== "cancelled" && (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!window.confirm("Are you sure you want to cancel this table reservation?")) return;
+                                    try {
+                                      const res = await api.put(`/table-reservations/${reserve.id}/status`, { status: "cancelled" });
+                                      if (res.data?.success) {
+                                        toast.success("Table reservation cancelled 📁");
+                                        setReservations((prev) => prev.map((r) => r.id === reserve.id ? { ...r, status: "cancelled" } : r));
+                                      }
+                                    } catch (err) {
+                                      toast.error("Failed to cancel reservation");
+                                    }
+                                  }}
+                                  style={{
+                                    background: "rgba(239, 68, 68, 0.12)",
+                                    color: "#ef4444",
+                                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                                    borderRadius: "8px",
+                                    padding: "6px 14px",
+                                    fontSize: "0.78rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  Cancel Reservation
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        )}
-
-                        <div style={{ marginTop: "16px", display: "flex", gap: "12px", fontSize: "0.75rem", color: "hsl(var(--muted))" }}>
-                          <span>Address: <strong>{venue.address}</strong></span>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )
-        )}
+          );
+        })()}
 
       </div>
     </div>
