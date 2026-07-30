@@ -288,11 +288,12 @@ function EventDetail() {
         const res = await api.get(`/events/${id}`);
         setEvent(res.data.data);
 
-        // Fetch related events
+        // Fetch related upcoming events
         if (res.data.data.venue_id) {
           const relRes = await api.get("/events/trending");
-          const related = relRes.data.data
-            .filter((e) => e.id !== id)
+          const todayStr = new Date().toISOString().split("T")[0];
+          const related = (relRes.data?.data || [])
+            .filter((e) => e.id !== id && e.date >= todayStr)
             .slice(0, 3);
           setRelatedEvents(related);
         }
@@ -420,9 +421,10 @@ function EventDetail() {
         </button>
 
         {/* 1. Main Split Grid (Poster & Booking Widget) */}
+        {/* 1. Main Unified 2-Column Grid */}
         <div className="ed-main-grid">
           
-          {/* Left Column: Cover Poster image frame */}
+          {/* Left Column: Cover Poster, Event Title, Meta, Description & Squads */}
           <div className="ed-poster-col">
             <div className="ed-poster-frame">
               <img 
@@ -445,34 +447,9 @@ function EventDetail() {
                 <HiMapPin /> {venue.name || "Secret Venue"}
               </div>
             </div>
-          </div>
 
-          {/* Right Column: Title, metadata, and booking selector */}
-          <div className="ed-booking-col">
-            <div className="ed-booking-card">
-              
-              {/* Active Squad Direct Chat Access */}
-              {myEventSquad && (
-                <div className="ed-my-squad-quick-chat" style={{ background: "rgba(125, 92, 252, 0.12)", border: "1px solid rgba(125, 92, 252, 0.3)", borderRadius: "14px", padding: "14px 18px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
-                  <div style={{ textDecoration: "none" }}>
-                    <span style={{ fontSize: "0.72rem", color: "var(--primary-light)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>💬 Your Active Party Squad</span>
-                    <h4 style={{ margin: "2px 0 0 0", color: "white", fontSize: "1.05rem", fontWeight: 800 }}>{myEventSquad.name}</h4>
-                    {myEventSquad.last_message && (
-                      <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.78rem" }}>
-                        "{myEventSquad.last_message.user?.full_name?.split(' ')[0]}: {myEventSquad.last_message.message.slice(0, 25)}..."
-                      </p>
-                    )}
-                  </div>
-                  <button 
-                    onClick={() => navigate(`/squads/${myEventSquad.id}`)}
-                    className="ed-pricing__book-btn"
-                    style={{ width: "auto", padding: "8px 18px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
-                  >
-                    💬 Open Squad Chat
-                  </button>
-                </div>
-              )}
-
+            {/* Title & Actions */}
+            <div className="ed-card" style={{ padding: "28px" }}>
               <div className="ed-title-row">
                 <h1 className="ed-title">{event.title}</h1>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -505,7 +482,7 @@ function EventDetail() {
               </div>
 
               {/* Quick Meta */}
-              <div className="ed-meta-group">
+              <div className="ed-meta-group" style={{ marginBottom: "20px", paddingBottom: "16px" }}>
                 <div className="ed-meta-item">
                   <span className="ed-meta-lbl">Date</span>
                   <span className="ed-meta-val">📅 {formatDate(event.date)}</span>
@@ -520,7 +497,96 @@ function EventDetail() {
                 </div>
               </div>
 
-              {/* Pass Selector widget */}
+              {/* About this event */}
+              <h2 className="ed-section-title" style={{ marginTop: "16px" }}>About this event</h2>
+              <p className="ed-about-text">
+                {event.description || "Get ready for an epic night filled with the best beats, amazing drinks, and an electric atmosphere. Bring your crew and let's make it a night to remember!"}
+              </p>
+
+              {event.tags && event.tags.length > 0 && (
+                <div className="ed-tags-wrapper">
+                  {event.tags.map((tag, idx) => (
+                    <span key={idx} className="ed-tag-badge">#{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Private Squad Coordinator */}
+            <div className="ed-card">
+              <div className="ed-squads-header">
+                <div>
+                  <h3 className="ed-sub-title" style={{ marginBottom: "2px" }}>🔒 Private Squad Coordinator</h3>
+                  <p style={{ color: "hsl(var(--muted))", fontSize: "0.8rem", margin: 0 }}>Launch your private crew to chat & party together with invited friends!</p>
+                </div>
+                <button className="ed-launch-squad-btn" onClick={() => setShowCreateSquad(!showCreateSquad)}>
+                  <HiUsers /> Launch a Crew
+                </button>
+              </div>
+
+              {showCreateSquad && (
+                <form onSubmit={handleCreateSquad} className="ed-squad-form">
+                  <input 
+                    type="text" 
+                    placeholder="Enter private crew name..."
+                    value={squadName}
+                    onChange={(e) => setSquadName(e.target.value)}
+                  />
+                  <button type="submit">Create Private Crew</button>
+                </form>
+              )}
+
+              {fetchingSquads ? (
+                <p style={{ color: "hsl(var(--muted))", fontSize: "0.85rem" }}>Loading your crews...</p>
+              ) : squads.length === 0 ? (
+                <div className="ed-squads-empty">
+                  <p>You haven't launched a private crew for this event yet. Create one to invite your friends!</p>
+                </div>
+              ) : (
+                <div className="ed-squads-list">
+                  {squads.map((squad) => (
+                    <div key={squad.id} className="ed-squad-strip">
+                      <div>
+                        <h4 className="ed-squad-name">🔒 {squad.name}</h4>
+                        <span className="ed-squad-host">Hosted by {squad.leader_name || "You"}</span>
+                      </div>
+                      <Link to={`/squads/${squad.id}`} className="ed-squad-join-btn">
+                        Open Private Crew
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Sticky Pass Selector, Party Meter & Venue Details */}
+          <div className="ed-booking-col">
+            
+            {/* Active Squad Direct Chat Access */}
+            {myEventSquad && (
+              <div className="ed-my-squad-quick-chat" style={{ background: "rgba(125, 92, 252, 0.12)", border: "1px solid rgba(125, 92, 252, 0.3)", borderRadius: "14px", padding: "14px 18px", marginBottom: "0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                <div style={{ textDecoration: "none" }}>
+                  <span style={{ fontSize: "0.72rem", color: "var(--primary-light)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px" }}>💬 Your Active Party Squad</span>
+                  <h4 style={{ margin: "2px 0 0 0", color: "white", fontSize: "1.05rem", fontWeight: 800 }}>{myEventSquad.name}</h4>
+                  {myEventSquad.last_message && (
+                    <p style={{ margin: "4px 0 0 0", color: "hsl(var(--muted))", fontSize: "0.78rem" }}>
+                      "{myEventSquad.last_message.user?.full_name?.split(' ')[0]}: {myEventSquad.last_message.message.slice(0, 25)}..."
+                    </p>
+                  )}
+                </div>
+                <button 
+                  onClick={() => navigate(`/squads/${myEventSquad.id}`)}
+                  className="ed-pricing__book-btn"
+                  style={{ width: "auto", padding: "8px 18px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                >
+                  💬 Open Squad Chat
+                </button>
+              </div>
+            )}
+
+            {/* Pass Selector widget */}
+            <div className="ed-booking-card">
               <div className="ed-pass-box">
                 <h3 className="ed-pass-box__title">Select your pass</h3>
                 
@@ -593,86 +659,8 @@ function EventDetail() {
                     : `Book ${quantity} Pass${quantity > 1 ? "es" : ""} — ₹${finalPrice}`}
                 </button>
               </div>
-
-            </div>
-          </div>
-
-        </div>
-
-        {/* 2. Detailed Grid (Description, Squads, Vibe Meter) */}
-        <div className="ed-split-grid">
-          
-          {/* Left Block: Description & Squads */}
-          <div className="ed-split-left">
-            
-            <div className="ed-card">
-              <h2 className="ed-section-title">About this event</h2>
-              <p className="ed-about-text">
-                {event.description || "Get ready for an epic night filled with the best beats, amazing drinks, and an electric atmosphere. Bring your crew and let's make it a night to remember!"}
-              </p>
-
-              {event.tags && event.tags.length > 0 && (
-                <div className="ed-tags-wrapper">
-                  {event.tags.map((tag, idx) => (
-                    <span key={idx} className="ed-tag-badge">#{tag}</span>
-                  ))}
-                </div>
-              )}
-
-              {/* Squads widget */}
-              <div className="ed-squads-box">
-                <div className="ed-squads-header">
-                  <div>
-                    <h3 className="ed-sub-title" style={{ marginBottom: "2px" }}>Squad Coordinator</h3>
-                    <p style={{ color: "hsl(var(--muted))", fontSize: "0.8rem", margin: 0 }}>Join a crew or start your own to party together!</p>
-                  </div>
-                  <button className="ed-launch-squad-btn" onClick={() => setShowCreateSquad(!showCreateSquad)}>
-                    <HiUsers /> Launch a Crew
-                  </button>
-                </div>
-
-                {showCreateSquad && (
-                  <form onSubmit={handleCreateSquad} className="ed-squad-form">
-                    <input 
-                      type="text" 
-                      placeholder="Enter crew name..."
-                      value={squadName}
-                      onChange={(e) => setSquadName(e.target.value)}
-                    />
-                    <button type="submit">Create</button>
-                  </form>
-                )}
-
-                {fetchingSquads ? (
-                  <p style={{ color: "hsl(var(--muted))", fontSize: "0.85rem" }}>Loading squads...</p>
-                ) : squads.length === 0 ? (
-                  <div className="ed-squads-empty">
-                    <p>No active squads for this event yet. Be the first to start a crew!</p>
-                  </div>
-                ) : (
-                  <div className="ed-squads-list">
-                    {squads.map((squad) => (
-                      <div key={squad.id} className="ed-squad-strip">
-                        <div>
-                          <h4 className="ed-squad-name">{squad.name}</h4>
-                          <span className="ed-squad-host">Hosted by {squad.host?.full_name || "Friend"}</span>
-                        </div>
-                        <Link to={`/squads/${squad.id}`} className="ed-squad-join-btn">
-                          <HiUserPlus /> View & Join
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
             </div>
 
-          </div>
-
-          {/* Right Block: Vibe Meter & Venue Spotlight */}
-          <div className="ed-split-right">
-            
             {/* Vibe Meter */}
             <div className="ed-card">
               <h2 className="ed-section-title">Party Meter™</h2>
@@ -700,7 +688,7 @@ function EventDetail() {
             </div>
 
             {/* Venue Spotlight card */}
-            <div className="ed-card" style={{ marginTop: "24px" }}>
+            <div className="ed-card">
               <h2 className="ed-section-title">Venue Spotlight</h2>
               <div className="ed-spotlight-venue">
                 <h3 className="ed-spotlight-name">{venue.name || "Secret Club"}</h3>

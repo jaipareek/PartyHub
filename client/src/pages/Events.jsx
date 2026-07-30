@@ -53,6 +53,8 @@ function Events() {
 
       const res = await api.get("/events/search", { params });
       let data = res.data.data || [];
+      const todayStr = new Date().toISOString().split("T")[0];
+      data = data.filter((e) => e.date >= todayStr);
 
       // Client-side sorting for price
       if (sort === "price_asc") {

@@ -587,6 +587,86 @@ select {
   animation: sparkle-trail 0.6s ease forwards;
 }
 
+/* ============================================
+   🖱️ Interactive Micro-Animations & Glow Utilities
+   ============================================ */
+
+/* Tactile button press feedback */
+button, .btn-primary, .ed-pricing__book-btn, .public-events-btn {
+  transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+button:active:not(:disabled),
+.btn-primary:active,
+.ed-pricing__book-btn:active,
+.public-events-btn:active {
+  transform: scale(0.96) !important;
+  filter: brightness(0.92);
+}
+
+/* Gradient shift on hover for primary gradient buttons */
+.ed-pricing__book-btn,
+.public-events-btn {
+  background-size: 200% 200% !important;
+  background-position: 0% 50%;
+}
+
+.ed-pricing__book-btn:hover,
+.public-events-btn:hover {
+  background-position: 100% 50%;
+}
+
+/* Enhanced input focus glow */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 
+    0 0 0 2px rgba(125, 92, 252, 0.2),
+    0 0 16px rgba(255, 0, 127, 0.1),
+    0 0 32px rgba(125, 92, 252, 0.06) !important;
+  border-color: var(--primary-light) !important;
+  transition: box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+/* Input glow pulse animation */
+@keyframes input-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(125, 92, 252, 0.2), 0 0 16px rgba(255, 0, 127, 0.08); }
+  50% { box-shadow: 0 0 0 3px rgba(125, 92, 252, 0.3), 0 0 24px rgba(255, 0, 127, 0.15); }
+}
+
+input:focus,
+textarea:focus {
+  animation: input-glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* ============================================
+   ✨ Floating Particle Ambiance
+   ============================================ */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 10% 15%, rgba(255, 0, 127, 0.25) 50%, transparent 50%),
+    radial-gradient(1px 1px at 25% 45%, rgba(125, 92, 252, 0.2) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 40% 75%, rgba(0, 240, 255, 0.2) 50%, transparent 50%),
+    radial-gradient(1px 1px at 55% 25%, rgba(255, 0, 127, 0.15) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 70% 60%, rgba(125, 92, 252, 0.18) 50%, transparent 50%),
+    radial-gradient(1px 1px at 85% 35%, rgba(0, 240, 255, 0.15) 50%, transparent 50%),
+    radial-gradient(1px 1px at 15% 80%, rgba(255, 0, 127, 0.12) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 90% 85%, rgba(125, 92, 252, 0.15) 50%, transparent 50%);
+  animation: particle-drift 25s linear infinite;
+  opacity: 0.6;
+}
+
+@keyframes particle-drift {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-120px); }
+}
+
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   .scroll-reveal {
@@ -601,5 +681,11 @@ select {
   .text-glitch,
   .neon-border {
     animation: none;
+  }
+  body::before {
+    animation: none;
+  }
+  button:active {
+    transform: none !important;
   }
 }

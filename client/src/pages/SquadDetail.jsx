@@ -28,6 +28,32 @@ function SquadDetail() {
   const [shareCvv, setShareCvv] = useState("");
   const [payingShare, setPayingShare] = useState(false);
 
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
+
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail || !inviteEmail.trim()) {
+      toast.error("Please enter a friend's email address");
+      return;
+    }
+
+    try {
+      setAddingMember(true);
+      const res = await api.post(`/squads/${squadId}/members`, { email: inviteEmail });
+      if (res.data?.success) {
+        toast.success(res.data.message || "Friend added to crew! 🎉");
+        setInviteEmail("");
+        fetchSquad();
+      }
+    } catch (err) {
+      console.error("Failed to add member:", err);
+      toast.error(err.response?.data?.error || "Failed to add member to crew");
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
   const handlePayShare = async (e) => {
     e.preventDefault();
     if (!shareCardNumber || !shareExpiry || !shareCvv) {
@@ -221,20 +247,25 @@ function SquadDetail() {
         {/* Header */}
         <header className="squad-detail-header">
           <div>
-            <h1>Squad: <em>{squad.name}</em></h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "4px" }}>
+              <h1 style={{ margin: 0 }}>Squad: <em>{squad.name}</em></h1>
+              <span style={{ background: "rgba(125, 92, 252, 0.12)", border: "1px solid rgba(125, 92, 252, 0.3)", color: "var(--primary-light)", fontSize: "0.72rem", fontWeight: 700, padding: "4px 10px", borderRadius: "20px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                🔒 Private Crew (Invite Only)
+              </span>
+            </div>
             <p>Created by {squad.leader?.full_name || "a friend"} for the night out</p>
           </div>
 
-          {!isMember && (
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <button
-              onClick={handleJoinSquad}
-              className="ed-pricing__book-btn"
-              disabled={joining}
-              style={{ width: "auto", padding: "12px 28px" }}
+              onClick={handleCopyLink}
+              className="ed-share-btn"
+              title="Copy Private Crew Invite Link"
+              style={{ width: "auto", borderRadius: "10px", padding: "10px 16px", gap: "6px", fontSize: "0.85rem" }}
             >
-              {joining ? "Joining..." : "Join this Squad"}
+              <HiShare /> Copy Invite Link
             </button>
-          )}
+          </div>
         </header>
 
         {/* Pinned Coordination Announcement */}
@@ -310,6 +341,36 @@ function SquadDetail() {
                   </div>
                 ))}
               </div>
+
+              {/* Add Crew Member Form */}
+              {(isMember || squad.leader_id === user?.id) && (
+                <form onSubmit={handleAddMember} style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+                  <input
+                    type="email"
+                    placeholder="Add friend by email (e.g. friend@gmail.com)..."
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: "10px",
+                      background: "rgba(255, 255, 255, 0.05)",
+                      border: "1px solid var(--border)",
+                      color: "white",
+                      fontSize: "0.85rem",
+                      outline: "none",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="ed-pricing__book-btn"
+                    disabled={addingMember}
+                    style={{ width: "auto", padding: "10px 20px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+                  >
+                    {addingMember ? "Adding..." : "➕ Add Member"}
+                  </button>
+                </form>
+              )}
 
               {/* Quick RSVP CTA if user is in squad but hasn't booked passes yet */}
               {isMember && !paylockSession && !squad.booking && !members.find(m => m.user?.id === user.id)?.has_booked && (

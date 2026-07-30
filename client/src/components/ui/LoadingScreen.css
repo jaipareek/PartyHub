@@ -1,5 +1,5 @@
 /* ============================================
-   🌙 Loading Screen — Party-Grade
+   🌙 Loading Screen — Party-Grade Premium
    ============================================ */
 .loading-screen {
   position: fixed;
@@ -10,9 +10,20 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  animation: loading-exit 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-play-state: paused;
 }
 
-/* Ambient orbs behind loading */
+.loading-screen.exiting {
+  animation-play-state: running;
+}
+
+@keyframes loading-exit {
+  0% { opacity: 1; transform: scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: scale(1.05); filter: blur(8px); }
+}
+
+/* Ambient orbs behind loading — intensify as loading progresses */
 .loading-screen::before,
 .loading-screen::after {
   content: "";
@@ -21,6 +32,7 @@
   filter: blur(100px);
   pointer-events: none;
   will-change: transform, opacity;
+  transition: opacity 1s ease, width 2s ease, height 2s ease;
 }
 
 .loading-screen::before {
@@ -29,7 +41,7 @@
   background: rgba(255, 0, 127, 0.1);
   top: -10%;
   right: -5%;
-  animation: orb-drift-1 10s ease-in-out infinite alternate;
+  animation: orb-drift-1 10s ease-in-out infinite alternate, aurora-intensify 2.7s ease-in forwards;
 }
 
 .loading-screen::after {
@@ -38,7 +50,39 @@
   background: rgba(0, 240, 255, 0.08);
   bottom: -5%;
   left: -5%;
-  animation: orb-drift-2 12s ease-in-out infinite alternate;
+  animation: orb-drift-2 12s ease-in-out infinite alternate, aurora-intensify-2 2.7s ease-in forwards;
+}
+
+/* Aurora intensification — orbs grow and glow brighter as progress increases */
+@keyframes aurora-intensify {
+  0% { opacity: 0.3; width: 300px; height: 300px; }
+  50% { opacity: 0.6; width: 450px; height: 450px; }
+  100% { opacity: 1; width: 550px; height: 550px; background: rgba(255, 0, 127, 0.22); }
+}
+
+@keyframes aurora-intensify-2 {
+  0% { opacity: 0.3; width: 200px; height: 200px; }
+  50% { opacity: 0.5; width: 350px; height: 350px; }
+  100% { opacity: 1; width: 450px; height: 450px; background: rgba(0, 240, 255, 0.18); }
+}
+
+/* Subtle grid overlay */
+.loading-screen .loading-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at center, black 30%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  animation: grid-reveal 1.5s 0.3s ease forwards;
+}
+
+@keyframes grid-reveal {
+  to { opacity: 1; }
 }
 
 /* Top-left label */
@@ -126,4 +170,14 @@
     0 0 6px rgba(255, 255, 255, 0.8),
     0 0 12px rgba(255, 0, 127, 0.5),
     0 0 20px rgba(0, 240, 255, 0.3);
+}
+
+@keyframes orb-drift-1 {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-40px, 30px); }
+}
+
+@keyframes orb-drift-2 {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, -40px); }
 }

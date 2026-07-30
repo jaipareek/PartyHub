@@ -114,109 +114,207 @@ function MyBookings() {
         </div>
 
         {/* ── TAB 1: EVENT PASSES ── */}
-        {activeTab === "passes" && (
-          bookings.length === 0 ? (
-            <div className="ticket-stub__empty">
-              <h3>No tickets found</h3>
-              <p>You haven't booked any event tickets yet. Explore trending events in your city!</p>
-              <Link to="/events" className="ed-pricing__book-btn" style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", width: "auto", padding: "12px 30px", marginTop: "20px" }}>
-                Browse Events
-              </Link>
-            </div>
-          ) : (
-            <div className="tickets-list">
-              {bookings.map((booking) => {
-                const event = booking.event || {};
-                const venue = event.venue || {};
-                const checkInUrl = `${window.location.origin}/owner/check-in/${booking.booking_code}`;
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(checkInUrl)}&color=000&bgcolor=fff`;
+        {activeTab === "passes" && (() => {
+          const todayStr = new Date().toISOString().split("T")[0];
 
-                return (
-                  <div key={booking.id} className="ticket-stub">
-                    <div className="ticket-stub__info">
-                      <img
-                        src={event.poster_url || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500"}
-                        alt={event.title}
-                        className="ticket-stub__poster"
-                      />
+          const activeBookings = bookings.filter((b) => {
+            const eventDate = b.event?.date;
+            const isCancelled = b.status === "cancelled" || b.status === "declined";
+            const isPast = eventDate ? eventDate < todayStr : false;
+            return !isCancelled && !isPast;
+          });
 
-                      <div className="ticket-stub__details">
-                        <h2 className="ticket-stub__title">{event.title}</h2>
-                        <p className="ticket-stub__venue">{venue.name}</p>
+          const historyBookings = bookings.filter((b) => {
+            const eventDate = b.event?.date;
+            const isCancelled = b.status === "cancelled" || b.status === "declined";
+            const isPast = eventDate ? eventDate < todayStr : false;
+            return isCancelled || isPast;
+          });
 
-                        <div className="ticket-stub__meta-group">
-                          <div className="ticket-stub__meta-item">
-                            <HiCalendar />
-                            <span>{formatDate(event.date)}</span>
-                          </div>
-                          <div className="ticket-stub__meta-item">
-                            <HiClock />
-                            <span>{formatTime(event.start_time)}</span>
-                          </div>
-                          <div className="ticket-stub__meta-item">
-                            <HiMapPin />
-                            <span>{venue.city}</span>
+          const displayedBookings = activeTabSubFilter === "active" ? activeBookings : historyBookings;
+
+          return (
+            <div>
+              <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "24px" }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabSubFilter("active")}
+                  style={{
+                    background: activeTabSubFilter === "active" ? "linear-gradient(135deg, var(--primary), var(--secondary))" : "rgba(255, 255, 255, 0.04)",
+                    color: "white",
+                    border: activeTabSubFilter === "active" ? "1px solid var(--primary-light)" : "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "6px 18px",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  🟢 Active Event Passes ({activeBookings.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTabSubFilter("history")}
+                  style={{
+                    background: activeTabSubFilter === "history" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.04)",
+                    color: activeTabSubFilter === "history" ? "white" : "hsl(var(--muted))",
+                    border: "1px solid var(--border)",
+                    borderRadius: "16px",
+                    padding: "6px 18px",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    cursor: "pointer"
+                  }}
+                >
+                  📁 History & Over ({historyBookings.length})
+                </button>
+              </div>
+
+              {displayedBookings.length === 0 ? (
+                <div className="ticket-stub__empty">
+                  <h3>{activeTabSubFilter === "active" ? "No active event passes" : "No pass history"}</h3>
+                  <p>{activeTabSubFilter === "active" ? "You don't have any active passes for upcoming events." : "Past or cancelled event passes will appear here."}</p>
+                  <Link to="/events" className="ed-pricing__book-btn" style={{ textDecoration: "none", display: "inline-flex", justifyContent: "center", width: "auto", padding: "12px 30px", marginTop: "20px" }}>
+                    Browse Events
+                  </Link>
+                </div>
+              ) : (
+                <div className="tickets-list">
+                  {displayedBookings.map((booking) => {
+                    const event = booking.event || {};
+                    const venue = event.venue || {};
+                    const checkInUrl = `${window.location.origin}/owner/check-in/${booking.booking_code}`;
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(checkInUrl)}&color=000&bgcolor=fff`;
+                    const isPast = event.date ? event.date < todayStr : false;
+                    const isCancelled = booking.status === "cancelled";
+
+                    return (
+                      <div key={booking.id} className="ticket-stub" style={{ opacity: isPast || isCancelled ? 0.75 : 1 }}>
+                        <div className="ticket-stub__info">
+                          <img
+                            src={event.poster_url || "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500"}
+                            alt={event.title}
+                            className="ticket-stub__poster"
+                          />
+
+                          <div className="ticket-stub__details">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                              <h2 className="ticket-stub__title" style={{ margin: 0 }}>{event.title}</h2>
+                              {isCancelled ? (
+                                <span className="vd-aftermeter__badge status-revoked">Cancelled 📁</span>
+                              ) : isPast ? (
+                                <span className="vd-aftermeter__badge status-rejected">Event Over ⌛</span>
+                              ) : null}
+                            </div>
+                            <p className="ticket-stub__venue">{venue.name}</p>
+
+                            <div className="ticket-stub__meta-group">
+                              <div className="ticket-stub__meta-item">
+                                <HiCalendar />
+                                <span>{formatDate(event.date)}</span>
+                              </div>
+                              <div className="ticket-stub__meta-item">
+                                <HiClock />
+                                <span>{formatTime(event.start_time)}</span>
+                              </div>
+                              <div className="ticket-stub__meta-item">
+                                <HiMapPin />
+                                <span>{venue.city}</span>
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px", flexWrap: "wrap" }}>
+                              <span className="ticket-stub__tier">
+                                {booking.tier_type} · {booking.quantity} Pass{booking.quantity > 1 ? "es" : ""}
+                              </span>
+                              {!isPast && !isCancelled && (
+                                <>
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const res = await api.post("/notifications/remind", {
+                                          event_id: event.id,
+                                          event_title: event.title,
+                                          reminder_hours: 2
+                                        });
+                                        if (res.data?.success) {
+                                          toast.success(res.data.message || "Reminder set for 2 hours before start! 🔔");
+                                        }
+                                      } catch (rErr) {
+                                        toast.error("Could not set reminder");
+                                      }
+                                    }}
+                                    style={{
+                                      background: "rgba(255, 0, 127, 0.12)",
+                                      color: "#ff007f",
+                                      border: "1px solid rgba(255, 0, 127, 0.3)",
+                                      borderRadius: "16px",
+                                      padding: "4px 12px",
+                                      fontSize: "0.75rem",
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "4px"
+                                    }}
+                                    title="Remind me 2h before party starts"
+                                  >
+                                    <HiBell /> Remind Me
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (!window.confirm("Are you sure you want to cancel this event pass?")) return;
+                                      try {
+                                        const res = await api.put(`/bookings/${booking.id}/cancel`);
+                                        if (res.data?.success) {
+                                          toast.success("Event pass cancelled 📁");
+                                          setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: "cancelled" } : b));
+                                        }
+                                      } catch (err) {
+                                        toast.error("Failed to cancel pass");
+                                      }
+                                    }}
+                                    style={{
+                                      background: "rgba(239, 68, 68, 0.12)",
+                                      color: "#ef4444",
+                                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                                      borderRadius: "16px",
+                                      padding: "4px 12px",
+                                      fontSize: "0.75rem",
+                                      fontWeight: 700,
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    Cancel Pass
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
-                          <span className="ticket-stub__tier">
-                            {booking.tier_type} · {booking.quantity} Pass{booking.quantity > 1 ? "es" : ""}
-                          </span>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await api.post("/notifications/remind", {
-                                  event_id: event.id,
-                                  event_title: event.title,
-                                  reminder_hours: 2
-                                });
-                                if (res.data?.success) {
-                                  toast.success(res.data.message || "Reminder set for 2 hours before start! 🔔");
-                                }
-                              } catch (rErr) {
-                                toast.error("Could not set reminder");
-                              }
-                            }}
-                            style={{
-                              background: "rgba(255, 0, 127, 0.12)",
-                              color: "#ff007f",
-                              border: "1px solid rgba(255, 0, 127, 0.3)",
-                              borderRadius: "16px",
-                              padding: "4px 12px",
-                              fontSize: "0.75rem",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px"
-                            }}
-                            title="Remind me 2h before party starts"
-                          >
-                            <HiBell /> Remind Me
-                          </button>
+                        <div className="ticket-stub__tear-line">
+                          <div className="ticket-stub__notch-top" />
+                          <div className="ticket-stub__notch-bottom" />
+                        </div>
+
+                        <div className="ticket-stub__receipt">
+                          <div className="ticket-stub__qr-placeholder">
+                            <img src={qrUrl} alt={`QR Code for booking ${booking.booking_code}`} />
+                          </div>
+                          <span className="ticket-stub__serial">Serial Pass</span>
+                          <span className="ticket-stub__code">{booking.booking_code}</span>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="ticket-stub__tear-line">
-                      <div className="ticket-stub__notch-top" />
-                      <div className="ticket-stub__notch-bottom" />
-                    </div>
-
-                    <div className="ticket-stub__receipt">
-                      <div className="ticket-stub__qr-placeholder">
-                        <img src={qrUrl} alt={`QR Code for booking ${booking.booking_code}`} />
-                      </div>
-                      <span className="ticket-stub__serial">Serial Pass</span>
-                      <span className="ticket-stub__code">{booking.booking_code}</span>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )
-        )}
+          );
+        })()}
 
         {/* ── TAB 2: TABLE RESERVATIONS ── */}
         {activeTab === "tables" && (() => {

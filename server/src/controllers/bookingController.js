@@ -200,3 +200,41 @@ export const getBookingById = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+// PUT /api/bookings/:id/cancel — Cancel a booking pass
+export const cancelBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data: booking, error: fetchErr } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (fetchErr || !booking) {
+      return res.status(404).json({ success: false, error: "Booking not found" });
+    }
+
+    if (booking.user_id !== req.user.id && req.user.role !== "admin") {
+      return res.status(403).json({ success: false, error: "Access denied" });
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ status: "cancelled" })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json({
+      success: true,
+      message: "Pass cancelled successfully 📁",
+      data
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

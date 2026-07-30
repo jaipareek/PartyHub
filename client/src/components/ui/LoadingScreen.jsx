@@ -8,6 +8,7 @@ const DURATION_MS = 2700;
 function LoadingScreen({ onComplete }) {
   const [count, setCount] = useState(0);
   const [wordIndex, setWordIndex] = useState(0);
+  const [exiting, setExiting] = useState(false);
   const startTimeRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -32,10 +33,11 @@ function LoadingScreen({ onComplete }) {
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
-        // Complete — small delay then exit
+        // Trigger exit animation, then call onComplete
+        setExiting(true);
         setTimeout(() => {
           onComplete();
-        }, 400);
+        }, 450);
       }
     },
     [onComplete]
@@ -49,7 +51,10 @@ function LoadingScreen({ onComplete }) {
   }, [animate]);
 
   return (
-    <div className="loading-screen">
+    <div className={`loading-screen${exiting ? " exiting" : ""}`}>
+      {/* Subtle grid overlay */}
+      <div className="loading-grid" />
+
       {/* Top-left label */}
       <motion.div
         className="loading-label"
@@ -66,9 +71,9 @@ function LoadingScreen({ onComplete }) {
           <motion.span
             key={wordIndex}
             className="loading-word"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
             transition={{ duration: 0.3, ease: "easeOut" }}
           >
             {WORDS[wordIndex]}

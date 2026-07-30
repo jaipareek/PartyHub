@@ -38,9 +38,11 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// GET /api/events/trending — Get most booked events
+// GET /api/events/trending — Get most booked upcoming events
 export const getTrendingEvents = async (req, res) => {
   try {
+    const todayStr = new Date().toISOString().split("T")[0];
+
     const { data, error } = await supabase
       .from("events")
       .select(`
@@ -49,6 +51,7 @@ export const getTrendingEvents = async (req, res) => {
       `)
       .eq("is_active", true)
       .eq("venues.is_verified", true)
+      .gte("date", todayStr)
       .order("booked_count", { ascending: false })
       .limit(10);
 
@@ -121,6 +124,8 @@ export const getWeekendEvents = async (req, res) => {
 // GET /api/events/student-deals — Get student discount events
 export const getStudentDeals = async (req, res) => {
   try {
+    const todayStr = new Date().toISOString().split("T")[0];
+
     const { data, error } = await supabase
       .from("events")
       .select(`
@@ -130,6 +135,7 @@ export const getStudentDeals = async (req, res) => {
       .eq("is_active", true)
       .eq("venues.is_verified", true)
       .eq("is_student_deal", true)
+      .gte("date", todayStr)
       .order("date", { ascending: true });
 
     if (error) throw error;

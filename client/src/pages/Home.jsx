@@ -23,6 +23,7 @@ import {
 import api from "../lib/api";
 import toast from "react-hot-toast";
 import EventCard from "../components/ui/EventCard";
+import PartyBackground from "../components/ui/PartyBackground";
 import "./Home.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -241,10 +242,11 @@ function Home() {
         api.get("/venues/my-submitted-vibes").catch(() => null),
       ]);
 
+      const todayStr = new Date().toISOString().split("T")[0];
       if (bookingsRes.data?.success) setMyBookings(bookingsRes.data.data);
       if (squadsRes.data?.success) setMySquads(squadsRes.data.data.slice(0, 3));
-      if (tonightRes.data?.success) setTonightEvents(tonightRes.data.data.slice(0, 3));
-      if (dealsRes.data?.success) setDealsEvents(dealsRes.data.data.slice(0, 3));
+      if (tonightRes.data?.success) setTonightEvents(tonightRes.data.data.filter(e => e.date >= todayStr).slice(0, 3));
+      if (dealsRes.data?.success) setDealsEvents(dealsRes.data.data.filter(e => e.date >= todayStr).slice(0, 3));
       if (vibesRes?.data?.success) setSubmittedVibeVenueIds(vibesRes.data.data);
 
     } catch (err) {
@@ -258,7 +260,9 @@ function Home() {
     try {
       const res = await api.get("/events");
       if (res.data?.success) {
-        setPublicEvents(res.data.data.slice(0, 3));
+        const todayStr = new Date().toISOString().split("T")[0];
+        const upcoming = res.data.data.filter(e => e.date >= todayStr);
+        setPublicEvents(upcoming.slice(0, 3));
       }
     } catch (err) {
       console.error("Failed to load public events teaser:", err);
@@ -648,7 +652,14 @@ function Home() {
         
         // 3. PERSONALIZED LOGGED-IN CUSTOMER VIBE HUB
         <div className="home-dashboard">
-          
+          <PartyBackground />
+
+          {/* Ambient Glow Orbs */}
+          <div className="home-ambient-glow" aria-hidden="true">
+            <div className="home-glow-orb home-glow-orb--1" />
+            <div className="home-glow-orb home-glow-orb--2" />
+          </div>
+
           {/* Live Vibe Check Survey Alert Card (Only visible when checked-in AND not submitted AND party is ongoing) */}
           {activeCheckInBooking && (
             <div className="venue-warning-banner animate-role-fade-in" style={{ background: "rgba(125, 92, 252, 0.1)", border: "1px solid rgba(125, 92, 252, 0.3)", color: "white", marginBottom: "28px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
@@ -696,6 +707,36 @@ function Home() {
             </div>
           </div>
 
+          {/* Live City Vibe Radar Banner & Category Filter Chips */}
+          <div className="home-vibe-radar-banner">
+            <div className="vibe-radar-info">
+              <div className="radar-live-badge">
+                <span className="radar-dot" /> LIVE CITY VIBE RADAR
+              </div>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
+                ⚡ 12 Verified Venues Active • 1.4k Partygoers Out Tonight • Peak Energy 94%
+              </p>
+            </div>
+            
+            <div className="vibe-category-pills">
+              <button onClick={() => navigate("/events?category=club_night")} className="vibe-pill active">
+                🔥 Club Nights
+              </button>
+              <button onClick={() => navigate("/events?category=student")} className="vibe-pill student">
+                🎓 Student Deals
+              </button>
+              <button onClick={() => navigate("/events?category=open_mic")} className="vibe-pill">
+                🎤 Open Mics
+              </button>
+              <button onClick={() => navigate("/events?category=festival")} className="vibe-pill">
+                🎪 Festivals
+              </button>
+              <button onClick={() => navigate("/events?category=gaming")} className="vibe-pill">
+                🎮 Gaming
+              </button>
+            </div>
+          </div>
+
           {/* Quick Actions split layout */}
           <div className="home-split-row">
             
@@ -708,30 +749,40 @@ function Home() {
                   <HiTicket style={{ color: "var(--primary)", fontSize: "1.2rem" }} /> My Tickets
                 </h3>
                 
-                {myBookings.length === 0 ? (
-                  <div className="empty-panel">
-                    <p>No active passes. Secure tickets to start your weekend!</p>
-                    <Link to="/events" className="empty-panel__btn">Browse Events</Link>
-                  </div>
-                ) : (
-                  <div className="passes-mini-list">
-                    {myBookings.slice(0, 2).map((booking) => {
-                      const event = booking.event || {};
-                      return (
-                        <div key={booking.id} className="pass-mini-card">
-                          <img src={event.poster_url} alt={event.title} />
-                          <div className="pass-mini-card__info">
-                            <h4>{event.title}</h4>
-                            <span>📅 {formatDate(event.date)} • {event.venue?.name || "Venue"}</span>
+                {(() => {
+                  const todayStr = new Date().toISOString().split("T")[0];
+                  const activePasses = myBookings.filter((b) => {
+                    const eventDate = b.event?.date;
+                    const isCancelled = b.status === "cancelled" || b.status === "declined";
+                    const isPast = eventDate ? eventDate < todayStr : false;
+                    return !isCancelled && !isPast;
+                  });
+
+                  return activePasses.length === 0 ? (
+                    <div className="empty-panel">
+                      <p>No active passes. Secure tickets to start your weekend!</p>
+                      <Link to="/events" className="empty-panel__btn">Browse Events</Link>
+                    </div>
+                  ) : (
+                    <div className="passes-mini-list">
+                      {activePasses.slice(0, 2).map((booking) => {
+                        const event = booking.event || {};
+                        return (
+                          <div key={booking.id} className="pass-mini-card">
+                            <img src={event.poster_url} alt={event.title} />
+                            <div className="pass-mini-card__info">
+                              <h4>{event.title}</h4>
+                              <span>📅 {formatDate(event.date)} • {event.venue?.name || "Venue"}</span>
+                            </div>
+                            <Link to="/my-bookings" className="pass-mini-card__btn">
+                              View QR Code
+                            </Link>
                           </div>
-                          <Link to="/my-bookings" className="pass-mini-card__btn">
-                            View QR Code
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* 💬 Quick Squad Chat Hub Inbox */}
@@ -942,6 +993,14 @@ function Home() {
                 {tonightEvents.map((e) => (
                   <EventCard key={e.id} event={e} />
                 ))}
+                {tonightEvents.length < 3 && (
+                  <div className="home-explore-more-card" onClick={() => navigate("/events")}>
+                    <div className="explore-more-icon">🎟️</div>
+                    <h3>Discover More City Events</h3>
+                    <p>Browse full party schedule, techno nights, and VIP lounge events in your city</p>
+                    <span className="explore-more-btn">Explore All Events →</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -957,6 +1016,14 @@ function Home() {
                 {dealsEvents.map((e) => (
                   <EventCard key={e.id} event={e} />
                 ))}
+                {dealsEvents.length < 3 && (
+                  <div className="home-explore-more-card" onClick={() => navigate("/events")}>
+                    <div className="explore-more-icon">🎓</div>
+                    <h3>More Student Partner Deals</h3>
+                    <p>Unlock up to 25% discount on passes with your student verification</p>
+                    <span className="explore-more-btn">View All Student Deals →</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -334,24 +334,70 @@
 
 /* ── 2. Vibe Hub Dashboard (Logged In) ── */
 .home-dashboard {
+  position: relative;
   max-width: 1200px;
   margin: 0 auto;
   padding: 120px 24px 80px 24px;
+}
+
+/* Ambient glow background orbs */
+.home-ambient-glow {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1200px;
+  height: 600px;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.home-glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.18;
+  animation: orbPulse 8s ease-in-out infinite alternate;
+}
+
+.home-glow-orb--1 {
+  top: 10%;
+  left: 10%;
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, #7c5cfc 0%, rgba(124, 92, 252, 0) 70%);
+}
+
+.home-glow-orb--2 {
+  top: 20%;
+  right: 10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #ff007f 0%, rgba(255, 0, 127, 0) 70%);
+}
+
+@keyframes orbPulse {
+  0% { transform: scale(1) translateY(0); opacity: 0.15; }
+  100% { transform: scale(1.15) translateY(-20px); opacity: 0.25; }
 }
 
 .home-greeting {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
   gap: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .greeting-eyebrow {
   font-size: 0.75rem;
   font-weight: 750;
-  color: var(--primary);
+  color: var(--primary-light);
   letter-spacing: 2px;
 }
 
@@ -365,7 +411,7 @@
 
 .greeting-title em {
   font-style: normal;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #ffffff 0%, var(--primary-light) 50%, #ff007f 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -404,19 +450,129 @@
   transform: translateY(-1px);
 }
 
+/* Live City Vibe Radar Banner */
+.home-vibe-radar-banner {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.12) 0%, rgba(255, 0, 127, 0.12) 50%, rgba(0, 240, 255, 0.1) 100%);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.radar-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: var(--primary-light);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.radar-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #10b981;
+  animation: radarPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  50% { transform: scale(1.4); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* Vibe Category Pills */
+.vibe-category-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vibe-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.vibe-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+  transform: translateY(-2px);
+}
+
+.vibe-pill.active {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(255, 0, 127, 0.3);
+}
+
+.vibe-pill.student {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.vibe-pill.student:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
 /* Home Split Layout */
 .home-split-row {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
   gap: 32px;
   align-items: start;
+  position: relative;
+  z-index: 2;
 }
 
 .glass-card {
-  background: var(--glass);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  position: relative;
+  background: rgba(14, 14, 22, 0.75);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
   padding: 24px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #7c5cfc 30%, #ff007f 70%, transparent 100%);
+  opacity: 0.6;
+}
+
+.glass-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 92, 252, 0.3);
+  box-shadow: 0 20px 50px rgba(124, 92, 252, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .glass-card__title {
@@ -823,8 +979,66 @@
 
 .home-spotlight-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+}
+
+.home-spotlight-grid:has(> :only-child) {
+  grid-template-columns: minmax(320px, 480px);
+}
+
+/* Explore More Teaser Card */
+.home-explore-more-card {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.08) 0%, rgba(255, 0, 127, 0.08) 100%);
+  border: 1px dashed rgba(124, 92, 252, 0.3);
+  border-radius: 20px;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  min-height: 280px;
+  transition: all var(--transition-fast);
+}
+
+.home-explore-more-card:hover {
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.15) 0%, rgba(255, 0, 127, 0.15) 100%);
+  border-color: var(--primary-light);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(124, 92, 252, 0.15);
+}
+
+.explore-more-icon {
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 12px rgba(124, 92, 252, 0.5));
+}
+
+.home-explore-more-card h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 6px 0;
+}
+
+.home-explore-more-card p {
+  font-size: 0.82rem;
+  color: hsl(var(--muted));
+  margin: 0 0 20px 0;
+  max-width: 260px;
+  line-height: 1.4;
+}
+
+.explore-more-btn {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 750;
+  box-shadow: 0 4px 15px rgba(255, 0, 127, 0.3);
 }
 
 /* ── 3. Footer Cinematic Layout (Syncd) ── */

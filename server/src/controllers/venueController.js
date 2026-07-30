@@ -59,10 +59,11 @@ export const getVenueById = async (req, res) => {
   }
 };
 
-// GET /api/venues/:id/events — Get all events for a verified venue
+// GET /api/venues/:id/events — Get all active upcoming events for a verified venue
 export const getVenueEvents = async (req, res) => {
   try {
     const { id } = req.params;
+    const todayStr = new Date().toISOString().split("T")[0];
 
     // Check if venue itself is verified
     const { data: venue, error: venueError } = await supabase
@@ -80,6 +81,7 @@ export const getVenueEvents = async (req, res) => {
       .select("*")
       .eq("venue_id", id)
       .eq("is_active", true)
+      .gte("date", todayStr)
       .order("date", { ascending: true });
 
     if (error) throw error;

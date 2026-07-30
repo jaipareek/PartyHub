@@ -96,9 +96,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 40%,
-    rgba(255, 255, 255, 0.15) 50%,
-    rgba(255, 255, 255, 0.08) 60%,
+    rgba(255, 255, 255, 0.1) 35%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.1) 65%,
     transparent 100%
   );
   transform: skewX(-15deg);
@@ -108,7 +108,7 @@
 }
 
 .event-card:hover .event-card__image-wrapper::after {
-  animation: holographic-sweep 0.8s ease forwards;
+  animation: holographic-sweep 0.55s ease forwards;
 }
 
 .event-card__image {
@@ -304,6 +304,28 @@
   border: 1px solid rgba(255, 0, 127, 0.06);
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+.event-card-skeleton__image,
+.event-card-skeleton__title,
+.event-card-skeleton__venue,
+.event-card-skeleton__time,
+.event-card-skeleton__price,
+.event-card-skeleton__capacity {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.1) 40%,
+    rgba(255, 255, 255, 0.04) 80%
+  );
+  background-size: 300% 100%;
+  animation: shimmer-slide 1.8s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .event-card-skeleton__image {

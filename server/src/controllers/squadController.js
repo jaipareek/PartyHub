@@ -136,10 +136,11 @@ export const joinSquad = async (req, res) => {
   }
 };
 
-// GET /api/squads/:squadId — Get detailed status of a squad and members ticketing checklist
+// GET /api/squads/:squadId — Get detailed status of a squad and members ticketing checklist (Private to members)
 export const getSquadDetails = async (req, res) => {
   try {
     const { squadId } = req.params;
+    const userId = req.user.id;
 
     // 1. Get squad and associated event/venue/booking details
     const { data: squad, error: squadErr } = await supabase
@@ -172,6 +173,17 @@ export const getSquadDetails = async (req, res) => {
       .eq("squad_id", squadId);
 
     if (membersErr) throw membersErr;
+
+    // 🔒 Privacy Enforcement: Only crew members or leader can view crew details
+    const isMember = members.some((m) => m.user?.id === userId || m.user_id === userId);
+    const isLeader = squad.leader_id === userId;
+
+    if (!isMember && !isLeader) {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. This crew is private and invite-only. Only crew members can view this group."
+      });
+    }
 
     // 3. Check if members have a booking for this squad's event
     const memberIds = members.map((m) => m.user.id);
@@ -219,26 +231,42 @@ export const getSquadDetails = async (req, res) => {
   }
 };
 
-// GET /api/squads/event/:eventId — Get list of public squads coordinating for an event
+// GET /api/squads/event/:eventId — Get list of user's own private squads for an event
 export const getEventSquads = async (req, res) => {
   try {
     const { eventId } = req.params;
+    const userId = req.user.id;
 
-    const { data: squads, error } = await supabase
+    // 🔒 Privacy Enforcement: Users can ONLY see crews they created or belong to!
+    const { data: memberSquads } = await supabase
+      .from("squad_members")
+      .select("squad_id")
+      .eq("user_id", userId);
+
+    const memberSquadIds = (memberSquads || []).map((m) => m.squad_id);
+
+    // Fetch squads for this event where user is leader OR member
+    let query = supabase
       .from("squads")
       .select(`
         *,
         leader:profiles (full_name, avatar_url),
-        members:squad_members (id)
+        members:squad_members (id, user_id)
       `)
       .eq("event_id", eventId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+      .eq("is_active", true);
+
+    if (memberSquadIds.length > 0) {
+      query = query.or(`leader_id.eq.${userId},id.in.(${memberSquadIds.join(',')})`);
+    } else {
+      query = query.eq("leader_id", userId);
+    }
+
+    const { data: squads, error } = await query.order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    // Format count
-    const formatted = squads.map((s) => ({
+    const formatted = (squads || []).map((s) => ({
       id: s.id,
       name: s.name,
       leader_name: s.leader?.full_name,
@@ -582,6 +610,92 @@ export const payMemberShare = async (req, res) => {
     });
   } catch (error) {
     console.error("Error paying squad member share:", error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+// POST /api/squads/:squadId/members — Add a friend to the crew by email
+export const addSquadMember = async (req, res) => {
+  try {
+    const { squadId } = req.params;
+    const { email } = req.body;
+    const userId = req.user.id;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ success: false, error: "Member email is required" });
+    }
+
+    // 1. Verify squad exists and requester is leader or member
+    const { data: squad, error: squadErr } = await supabase
+      .from("squads")
+      .select("id, name, leader_id")
+      .eq("id", squadId)
+      .single();
+
+    if (squadErr || !squad) {
+      return res.status(404).json({ success: false, error: "Squad not found" });
+    }
+
+    const { data: requesterMember } = await supabase
+      .from("squad_members")
+      .select("id")
+      .eq("squad_id", squadId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (squad.leader_id !== userId && !requesterMember) {
+      return res.status(403).json({ success: false, error: "Only crew members can add friends to this private crew" });
+    }
+
+    // 2. Locate user profile by email
+    const { data: targetUser } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .ilike("email", email.trim())
+      .maybeSingle();
+
+    if (!targetUser) {
+      return res.status(404).json({
+        success: false,
+        error: `No user found with email "${email}". Make sure they have registered an account on AfterDark!`
+      });
+    }
+
+    // 3. Add to squad_members
+    const { data: member, error: memberErr } = await supabase
+      .from("squad_members")
+      .insert({
+        squad_id: squadId,
+        user_id: targetUser.id,
+        status: "accepted",
+      })
+      .select()
+      .single();
+
+    if (memberErr) {
+      if (memberErr.code === "23505") {
+        return res.status(400).json({ success: false, error: `${targetUser.full_name || email} is already in this crew!` });
+      }
+      throw memberErr;
+    }
+
+    // 4. Send notification to the added user
+    await supabase.from("notifications").insert({
+      user_id: targetUser.id,
+      title: "Added to Private Crew! 👥",
+      message: `You were added to party squad "${squad.name}".`,
+      type: "squad_invite",
+      related_id: squadId,
+      related_type: "squad",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `${targetUser.full_name || email} added to the crew! 🎉`,
+      data: member,
+    });
+  } catch (error) {
+    console.error("Error adding squad member:", error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 };

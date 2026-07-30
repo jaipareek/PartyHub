@@ -164,11 +164,11 @@ function Navbar() {
             <div className="pill-navbar__notif-wrapper hide-mobile">
               <button
                 type="button"
-                className="pill-navbar__notif-btn"
+                className={`pill-navbar__notif-btn${notifications.some(n => !n.is_read) ? " pill-navbar__notif-btn--has-unread" : ""}`}
                 onClick={() => setShowNotifDrawer(!showNotifDrawer)}
                 title="Notifications"
               >
-                <HiBell style={{ fontSize: "1.3rem", color: showNotifDrawer ? "var(--primary-light)" : "white" }} />
+                <HiBell className="pill-navbar__notif-icon" style={{ fontSize: "1.3rem", color: showNotifDrawer ? "var(--primary-light)" : "white" }} />
                 {notifications.some(n => !n.is_read) && (
                   <span className="pill-navbar__notif-badge">
                     {notifications.filter(n => !n.is_read).length}
