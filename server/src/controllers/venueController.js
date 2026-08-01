@@ -29,15 +29,15 @@ export const getVenues = async (req, res) => {
   }
 };
 
-// GET /api/venues/:id — Get single venue if verified with its events
+// GET /api/venues/:id — Get single venue if verified with its upcoming active events
 export const getVenueById = async (req, res) => {
   try {
     const { id } = req.params;
+    const todayStr = new Date().toISOString().split("T")[0];
 
     // 🧠 LEARN: Nested select
     // venues(*) gets all venue columns
     // events(*) gets all events belonging to this venue
-    // Supabase automatically JOINs them using the foreign key relationship
     const { data, error } = await supabase
       .from("venues")
       .select(`
@@ -51,6 +51,11 @@ export const getVenueById = async (req, res) => {
     if (error) throw error;
     if (!data) {
       return res.status(404).json({ success: false, error: "Venue not found" });
+    }
+
+    // Filter out past expired events
+    if (data.events && Array.isArray(data.events)) {
+      data.events = data.events.filter((e) => e.is_active && e.date >= todayStr);
     }
 
     res.status(200).json({ success: true, data });

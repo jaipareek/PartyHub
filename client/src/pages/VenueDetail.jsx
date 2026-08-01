@@ -314,8 +314,9 @@ function VenueDetail() {
 
   if (!venue) return null;
 
+  const todayStr = new Date().toISOString().split("T")[0];
   const events = venue.events || [];
-  const activeEvents = events.filter((e) => e.is_active);
+  const activeEvents = events.filter((e) => e.is_active && e.date >= todayStr);
 
   // Build Google Maps link
   const mapsUrl =
